@@ -278,7 +278,7 @@ namespace MinaCardsMod.Patches
       string key,
       Vector2 defaultValue = default (Vector2))
     {
-      return redirect ? IniFile.GetVector2Value(section, key, new Vector2()) : IniFile.GetVector2ValueOther(section, key, new Vector2());
+      return redirect ? IniFile.GetVector2Value(section, key) : IniFile.GetVector2ValueOther(section, key);
     }
 
     public static Color GetColorValueRedirect(
@@ -287,7 +287,7 @@ namespace MinaCardsMod.Patches
       string key,
       Color defaultValue = default (Color))
     {
-      return redirect ? IniFile.GetColorValue(section, key, new Color()) : IniFile.GetColorValueOther(section, key, new Color());
+      return redirect ? IniFile.GetColorValue(section, key) : IniFile.GetColorValueOther(section, key);
     }
 
     public static bool GetBoolValueRedirect(
