@@ -9,12 +9,12 @@ using UnityEngine;
 #nullable disable
 namespace MinaCardsMod
 {
-  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.2.4")]
+  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.2.5")]
   public class MinaCardsModPlugin : BaseUnityPlugin
   {
     private const string MyGUID = "com.KalinuxYT.MinaCardsMod";
     private const string PluginName = "MinaCardsMod";
-    private const string VersionString = "1.2.4";
+    private const string VersionString = "1.2.5";
     public static string SwapExpansionsKey = "Album expansions toggle";
     public static string CustomNewExpansionImagesKey = "Enable custom card images for new expansions";
     public static string CustomNewExpansionConfigsKey = "Enable custom configs for new expansions";
@@ -37,10 +37,10 @@ namespace MinaCardsMod
     {
       this.Logger.LogInfo("Awake method called");
       MinaCardsModPlugin.SwapExpansions = this.Config.Bind<bool>("General", MinaCardsModPlugin.SwapExpansionsKey, false, new ConfigDescription("Swap between the expansions in the collection book.", (AcceptableValueBase) null, Array.Empty<object>()));
-      MinaCardsModPlugin.CustomNewExpansionImages = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomNewExpansionImagesKey, false, new ConfigDescription("Enable custom card images for new expansions", (AcceptableValueBase) null, Array.Empty<object>()));
-      MinaCardsModPlugin.CustomNewExpansionConfigs = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomNewExpansionConfigsKey, false, new ConfigDescription("Enable custom configs for new expansions", (AcceptableValueBase) null, Array.Empty<object>()));
-      MinaCardsModPlugin.CustomBaseMonsterImages = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomBaseMonsterImagesKey, false, new ConfigDescription("Enable custom card images for original expansions", (AcceptableValueBase) null, Array.Empty<object>()));
-      MinaCardsModPlugin.CustomBaseConfigs = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomBaseConfigsKey, false, new ConfigDescription("Enable custom configs for original expansions", (AcceptableValueBase) null, Array.Empty<object>()));
+      MinaCardsModPlugin.CustomNewExpansionImages = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomNewExpansionImagesKey, true, new ConfigDescription("Enable custom card images for new expansions", (AcceptableValueBase) null, Array.Empty<object>()));
+      MinaCardsModPlugin.CustomNewExpansionConfigs = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomNewExpansionConfigsKey, true, new ConfigDescription("Enable custom configs for new expansions", (AcceptableValueBase) null, Array.Empty<object>()));
+      MinaCardsModPlugin.CustomBaseMonsterImages = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomBaseMonsterImagesKey, true, new ConfigDescription("Enable custom card images for original expansions", (AcceptableValueBase) null, Array.Empty<object>()));
+      MinaCardsModPlugin.CustomBaseConfigs = this.Config.Bind<bool>("General", MinaCardsModPlugin.CustomBaseConfigsKey, true, new ConfigDescription("Enable custom configs for original expansions", (AcceptableValueBase) null, Array.Empty<object>()));
       MinaCardsModPlugin.SwapExpansionKeyboardShortcut = this.Config.Bind<KeyboardShortcut>("General", MinaCardsModPlugin.SwapExpansionKeyboardShortcutKey, new KeyboardShortcut(KeyCode.U, Array.Empty<KeyCode>()));
       MinaCardsModPlugin.ReCacheFiles = this.Config.Bind<KeyboardShortcut>("General", MinaCardsModPlugin.ReCacheFilesKey, new KeyboardShortcut(KeyCode.None, Array.Empty<KeyCode>()));
       MinaCardsModPlugin.SwapExpansions.SettingChanged += new EventHandler(this.ConfigSettingChanged);
@@ -49,9 +49,9 @@ namespace MinaCardsMod
       MinaCardsModPlugin.CustomNewExpansionConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseMonsterImages.SettingChanged += new EventHandler(this.ConfigSettingChanged);
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.2.4-Fragile is loading...");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.2.5-Fragile is loading...");
       MinaCardsModPlugin.Harmony.PatchAll();
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.2.4-Fragile is loaded.");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.2.5-Fragile is loaded.");
       this.Logger.LogWarning((object) "This is a 'Fragile' build, this means any update to the game may cause the mod to break. This mod is compatible with v0.46 of the game.");
       MinaCardsModPlugin.Log = this.Logger;
     }

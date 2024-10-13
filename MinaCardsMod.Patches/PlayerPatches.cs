@@ -47,11 +47,6 @@ namespace MinaCardsMod.Patches
     {
       ImageSwapHandler.CloneOriginalSpriteLists();
       ImageSwapHandler.CloneOriginalCardBackTexture();
-      ImageSwapHandler.ReplaceCardBGImagesInList();
-      ImageSwapHandler.ReplaceCardBorderImagesInList();
-      ImageSwapHandler.ReplaceCardFoilMaskImagesInList();
-      ImageSwapHandler.ReplaceCardFrontImagesInList();
-      ImageSwapHandler.ReplaceCardBackImagesInList();
       ImageSwapHandler.GetOriginalMonsterSprites();
       ImageSwapHandler.SetBaseMonsterIcons();
       ImageSwapHandler.SetCatJobMonsterIcons();
@@ -138,12 +133,9 @@ namespace MinaCardsMod.Patches
       }
       else
       {
-        __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>().text =
-          LocalizationManager.GetTranslation("Tetramon");
-        __instance.m_ExpansionBtnList[1].GetComponentInChildren<TMP_Text>().text =
-          LocalizationManager.GetTranslation("Destiny");
-        __instance.m_ExpansionBtnList[2].GetComponentInChildren<TMP_Text>().text =
-          LocalizationManager.GetTranslation("Ghost");
+        __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Tetramon");
+        __instance.m_ExpansionBtnList[1].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Destiny"); 
+        __instance.m_ExpansionBtnList[2].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Ghost");
         foreach (Component expansionBtn in __instance.m_ExpansionBtnList)
         {
           foreach (Image componentsInChild in expansionBtn.GetComponentsInChildren<Image>())
@@ -157,7 +149,6 @@ namespace MinaCardsMod.Patches
           }
         }
       }
-
       __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>();
       __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>();
       __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>();
@@ -176,7 +167,7 @@ namespace MinaCardsMod.Patches
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CollectionBinderFlipAnimCtrl), "EnterViewUpCloseState")]
+    [HarmonyPatch(typeof (CollectionBinderFlipAnimCtrl), "EnterViewUpCloseState")]
     public static void CollectionBinderFlipAnimCtrl_EnterViewUpCloseState_Postfix(
       CollectionBinderFlipAnimCtrl __instance)
     {
@@ -185,22 +176,22 @@ namespace MinaCardsMod.Patches
         return;
       bool isGhost = cardData.expansionType == ECardExpansionType.Ghost;
       bool isFoil = cardData.isFoil;
-      if (__instance.m_CollectionBinderUI.m_CardNameText.text != __instance.m_CurrentSpawnedInteractableCard3d
-            .m_Card3dUI.m_CardUI.m_MonsterNameText.text)
-        __instance.m_CollectionBinderUI.m_CardNameText.text = __instance.m_CurrentSpawnedInteractableCard3d.m_Card3dUI
-          .m_CardUI.m_MonsterNameText.text;
+      if (__instance.m_CollectionBinderUI.m_CardNameText.text != __instance.m_CurrentSpawnedInteractableCard3d.m_Card3dUI.m_CardUI.m_MonsterNameText.text)
+														
+        __instance.m_CollectionBinderUI.m_CardNameText.text = __instance.m_CurrentSpawnedInteractableCard3d.m_Card3dUI.m_CardUI.m_MonsterNameText.text;
+										   
       CardUI cardUi1 = __instance.m_CurrentViewInteractableCard3d.m_Card3dUI.m_CardUI;
-      CardUI cardUi2 = !isGhost || !((UnityEngine.Object)cardUi1.m_GhostCard != (UnityEngine.Object)null)
-        ? __instance.m_CurrentViewInteractableCard3d.m_Card3dUI.m_CardUI
-        : ExtrasHandler.CurrentCardUI(isGhost, cardUi1, cardUi1.m_GhostCard);
+      CardUI cardUi2 = !isGhost || !((UnityEngine.Object) cardUi1.m_GhostCard != (UnityEngine.Object) null) ? __instance.m_CurrentViewInteractableCard3d.m_Card3dUI.m_CardUI : ExtrasHandler.CurrentCardUI(isGhost, cardUi1, cardUi1.m_GhostCard);
+																		
+																			 
       string text1 = cardUi2.m_FirstEditionText.text;
       string text2 = cardUi2.m_RarityText.text;
       string str1 = "";
       Transform transform = cardUi2.transform.Find("FoilText");
-      if ((UnityEngine.Object)transform != (UnityEngine.Object)null)
+      if ((UnityEngine.Object) transform != (UnityEngine.Object) null)
       {
         TextMeshProUGUI component = transform.GetComponent<TextMeshProUGUI>();
-        if ((UnityEngine.Object)component != (UnityEngine.Object)null)
+        if ((UnityEngine.Object) component != (UnityEngine.Object) null)
           str1 = component.text;
       }
 
@@ -229,8 +220,7 @@ namespace MinaCardsMod.Patches
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownItemType.Add(EItemType.GhostPack);
         }
 
-        if (!CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType
-              .Contains(EItemType.FantasyRPGPack))
+        if (!CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Contains(EItemType.FantasyRPGPack))
         {
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Add(EItemType.FantasyRPGPack);
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Add(EItemType.CatJobPack);
@@ -294,14 +284,14 @@ namespace MinaCardsMod.Patches
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(CardUI), "SetCardUI")]
-    public static void CardUI_SetCardUI_Extras_Postfix(CardUI __instance, CardData cardData)
+    public static void CardUI_SetCardUI_Main_Postfix(CardUI __instance, CardData cardData)
     {
       if (MinaCardsModPlugin.isConfigGeneratorBuild)
       {
         ConfigGeneratorHelper.writeMonsterData(cardData, __instance);
         ConfigGeneratorHelper.WriteAllFullExpansionConfigs();
       }
-
+      ExtrasHandler.SetCardExtrasImages(__instance, cardData);
       if (!ExtrasHandler.isCardConfigDriven(cardData) || MinaCardsModPlugin.isConfigGeneratorBuild)
         return;
       CustomCardObject cardConfig = (CustomCardObject)null;
@@ -333,9 +323,7 @@ namespace MinaCardsMod.Patches
       {
         if (cardData.expansionType == ECardExpansionType.Tetramon)
         {
-          CustomCardObject customCardObject1 =
-            CacheHandler.tetramonConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject1 = CacheHandler.tetramonConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject1 != null)
             cardConfig = customCardObject1;
           else
@@ -343,9 +331,7 @@ namespace MinaCardsMod.Patches
         }
         else if (cardData.expansionType == ECardExpansionType.Destiny)
         {
-          CustomCardObject customCardObject2 =
-            CacheHandler.destinyConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject2 = CacheHandler.destinyConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject2 != null)
             cardConfig = customCardObject2;
           else
@@ -353,9 +339,7 @@ namespace MinaCardsMod.Patches
         }
         else if (cardData.expansionType == ECardExpansionType.Ghost)
         {
-          CustomCardObject customCardObject3 =
-            CacheHandler.ghostConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject3 = CacheHandler.ghostConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject3 != null)
             cardConfig = customCardObject3;
           else
@@ -363,9 +347,7 @@ namespace MinaCardsMod.Patches
         }
         else if (cardData.expansionType == ECardExpansionType.CatJob)
         {
-          CustomCardObject customCardObject4 =
-            CacheHandler.catJobConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject4 = CacheHandler.catJobConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject4 != null)
             cardConfig = customCardObject4;
           else
@@ -373,9 +355,7 @@ namespace MinaCardsMod.Patches
         }
         else if (cardData.expansionType == ECardExpansionType.FantasyRPG)
         {
-          CustomCardObject customCardObject5 =
-            CacheHandler.fantasyRPGConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject5 = CacheHandler.fantasyRPGConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject5 != null)
             cardConfig = customCardObject5;
           else
@@ -383,18 +363,14 @@ namespace MinaCardsMod.Patches
         }
         else if (cardData.expansionType == ECardExpansionType.Megabot)
         {
-          CustomCardObject customCardObject6 =
-            CacheHandler.megabotConfigCache.FirstOrDefault<CustomCardObject>(
-              (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == fileName));
+          CustomCardObject customCardObject6 = CacheHandler.megabotConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
           if (customCardObject6 != null)
             cardConfig = customCardObject6;
           else
             PlayerPatches.LogError("Null card Megabot");
         }
 
-        CustomCardObject customCardObject7 =
-          CacheHandler.fullExpansionsConfigCache.FirstOrDefault<CustomCardObject>(
-            (Func<CustomCardObject, bool>)(customCardObject => customCardObject.Header == expansionName));
+        CustomCardObject customCardObject7 = CacheHandler.fullExpansionsConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == expansionName));
         if (customCardObject7 != null)
           fullExpansionConfig = customCardObject7;
         else

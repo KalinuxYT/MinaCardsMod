@@ -23,12 +23,14 @@ namespace MinaCardsMod.Handlers
     public static List<CustomCardObject> ghostConfigCache = new List<CustomCardObject>();
     public static List<CustomCardObject> megabotConfigCache = new List<CustomCardObject>();
     public static List<CustomCardObject> tetramonConfigCache = new List<CustomCardObject>();
+    public static List<Sprite> originalCardEditionBorderList = new List<Sprite>();
     public static List<Sprite> originalCardBorderList = new List<Sprite>();
     public static List<Sprite> originalCardBGList = new List<Sprite>();
     public static List<Sprite> originalCardFrontImageList = new List<Sprite>();
     public static List<Sprite> originalCardBackImageList = new List<Sprite>();
     public static List<Sprite> originalCardFoilMaskImageList = new List<Sprite>();
     public static List<Sprite> originalTetramonMonsterImageList = new List<Sprite>();
+    public static List<Sprite> originalCardExtrasImagesList = new List<Sprite>();
     public static Sprite originalCardBackTexture;
     public static bool clonedOriginalMonsterImages = false;
     public static bool clonedOriginalSpriteLists = false;

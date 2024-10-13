@@ -79,12 +79,13 @@ namespace MinaCardsMod.Handlers
     {
       if (CacheHandler.clonedOriginalSpriteLists)
         return;
+      List<Sprite> borderSpriteList = CSingleton<CardUI>.Instance.m_CardBorderSpriteList;
       List<Sprite> cardBorderList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBorderList;
       List<Sprite> cardBgList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBGList;
       List<Sprite> cardFrontImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardFrontImageList;
       List<Sprite> cardBackImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBackImageList;
       List<Sprite> foilMaskImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardFoilMaskImageList;
-      List<Sprite> tetramonImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_TetramonImageList;
+      ImageSwapHandler.CloneSpriteList(borderSpriteList, ref CacheHandler.originalCardEditionBorderList);
       ImageSwapHandler.CloneSpriteList(cardBorderList, ref CacheHandler.originalCardBorderList);
       ImageSwapHandler.CloneSpriteList(cardBgList, ref CacheHandler.originalCardBGList);
       ImageSwapHandler.CloneSpriteList(cardFrontImageList, ref CacheHandler.originalCardFrontImageList);
@@ -93,52 +94,32 @@ namespace MinaCardsMod.Handlers
       CacheHandler.clonedOriginalSpriteLists = true;
     }
 
-    public static void ReplaceCardBorderImagesInList()
+    public static void CloneOriginalCardExtrasSprites()
     {
-      List<Sprite> cardBorderList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBorderList;
-      if (cardBorderList == null)
-        return;
-      for (int index = 0; index < cardBorderList.Count; ++index)
+      foreach (Sprite originalCardBg in CacheHandler.originalCardBGList)
       {
-        Sprite sprite1 = cardBorderList[index];
-        if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null && sprite1.name != null)
-        {
-          Sprite sprite2 = (Sprite) null;
-          if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-          else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardBorderList, sprite1.name);
-          if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
-            cardBorderList[index] = sprite2;
-        }
+        if (!CacheHandler.originalCardExtrasImagesList.Contains(originalCardBg))
+          CacheHandler.originalCardExtrasImagesList.Add(originalCardBg);
       }
-    }
-
-    public static void ReplaceCardBGImagesInList()
-    {
-      List<Sprite> cardBgList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBGList;
-      if (cardBgList == null)
-        return;
-      for (int index = 0; index < cardBgList.Count; ++index)
+      foreach (Sprite originalCardBorder in CacheHandler.originalCardBorderList)
       {
-        Sprite sprite1 = cardBgList[index];
-        Sprite sprite2 = (Sprite) null;
-        if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null && sprite1.name != null)
-        {
-          if (sprite1.name == "CardBG_CatJob" || sprite1.name == "CardBG_FantasyRPG" || sprite1.name == "CardBG_Megabot")
-          {
-            if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-            else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardBGList, sprite1.name);
-          }
-          else if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-          else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardBGList, sprite1.name);
-        }
-        if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
-          cardBgList[index] = sprite2;
+        if (!CacheHandler.originalCardExtrasImagesList.Contains(originalCardBorder))
+          CacheHandler.originalCardExtrasImagesList.Add(originalCardBorder);
+      }
+      foreach (Sprite cardEditionBorder in CacheHandler.originalCardEditionBorderList)
+      {
+        if (!CacheHandler.originalCardExtrasImagesList.Contains(cardEditionBorder))
+          CacheHandler.originalCardExtrasImagesList.Add(cardEditionBorder);
+      }
+      foreach (Sprite cardFoilMaskImage in CacheHandler.originalCardFoilMaskImageList)
+      {
+        if (!CacheHandler.originalCardExtrasImagesList.Contains(cardFoilMaskImage))
+          CacheHandler.originalCardExtrasImagesList.Add(cardFoilMaskImage);
+      }
+      foreach (Sprite originalCardFrontImage in CacheHandler.originalCardFrontImageList)
+      {
+        if (!CacheHandler.originalCardExtrasImagesList.Contains(originalCardFrontImage))
+          CacheHandler.originalCardExtrasImagesList.Add(originalCardFrontImage);
       }
     }
 
@@ -219,84 +200,6 @@ namespace MinaCardsMod.Handlers
       return null;
     }
 
-
-    public static void ReplaceCardFrontImagesInList()
-    {
-      List<Sprite> cardFrontImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardFrontImageList;
-      if (cardFrontImageList == null)
-        return;
-      for (int index = 0; index < cardFrontImageList.Count; ++index)
-      {
-        Sprite sprite1 = cardFrontImageList[index];
-        Sprite sprite2 = (Sprite) null;
-        if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null && sprite1.name != null)
-        {
-          if (sprite1.name == "CardFrontCatJob" || sprite1.name == "CardFrontFantasyRPG" || sprite1.name == "CardFrontMegabot")
-          {
-            if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-            else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardFrontImageList, sprite1.name);
-          }
-          else if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-          else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardFrontImageList, sprite1.name);
-        }
-        if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
-          cardFrontImageList[index] = sprite2;
-      }
-    }
-
-    public static void ReplaceCardBackImagesInList()
-    {
-      List<Sprite> cardBackImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardBackImageList;
-      if (cardBackImageList == null)
-        return;
-      for (int index = 0; index < cardBackImageList.Count; ++index)
-      {
-        Sprite sprite1 = cardBackImageList[index];
-        Sprite sprite2 = (Sprite) null;
-        if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null && sprite1.name != null)
-        {
-          if (sprite1.name == "CardBackCatJob" || sprite1.name == "CardBackFantasyRPG" || sprite1.name == "CardBackMegabot")
-          {
-            if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-            else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value)
-              sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardBackImageList, sprite1.name);
-          }
-          else if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-          else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardBackImageList, sprite1.name);
-        }
-        if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
-          cardBackImageList[index] = sprite2;
-      }
-    }
-
-    public static void ReplaceCardFoilMaskImagesInList()
-    {
-      List<Sprite> foilMaskImageList = CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CardFoilMaskImageList;
-      if (foilMaskImageList == null)
-        return;
-      for (int index = 0; index < foilMaskImageList.Count; ++index)
-      {
-        Sprite sprite1 = foilMaskImageList[index];
-        Sprite sprite2 = (Sprite) null;
-        if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null && sprite1.name != null)
-        {
-          if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.cardExtrasImagesCache, sprite1.name);
-          else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-            sprite2 = ImageSwapHandler.SwapSprite(CacheHandler.originalCardFoilMaskImageList, sprite1.name);
-        }
-        if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
-          foilMaskImageList[index] = sprite2;
-      }
-    }
-
     public static void SetBaseMonsterIcons()
     {
       foreach (EMonsterType monsterType in Enum.GetValues(typeof (EMonsterType)))
@@ -305,19 +208,28 @@ namespace MinaCardsMod.Handlers
         {
           if (monsterType > EMonsterType.FireChickenB)
             break;
+          string monsterName = monsterType.ToString();
+          if (monsterName == "EmeraldA")
+            monsterName = "CrystalA";
+          else if (monsterName == "EmeraldB")
+            monsterName = "CrystalB";
+          else if (monsterName == "EmeraldC")
+            monsterName = "CrystalC";
+          else if (monsterName == "MummyMan")
+            monsterName = "Mummy";
           if (monsterType >= EMonsterType.PiggyA && monsterType <= EMonsterType.FireChickenB)
           {
             MonsterData monsterData = InventoryBase.GetMonsterData(monsterType);
             if (monsterData != null)
             {
-              string monsterName = monsterType.ToString();
-              if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
+              if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
+																	
               {
                 Sprite sprite1 = CacheHandler.tetramonPackImagesCache.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == monsterName));
                 if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null)
                   monsterData.Icon = sprite1;
               }
-              else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value)
+              else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
               {
                 Sprite sprite2 = CacheHandler.originalTetramonMonsterImageList.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == monsterName));
                 if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)

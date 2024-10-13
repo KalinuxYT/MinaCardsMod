@@ -16,11 +16,6 @@ namespace MinaCardsMod.Handlers
   {
     public static void DoReload()
     {
-      ImageSwapHandler.ReplaceCardBackImagesInList();
-      ImageSwapHandler.ReplaceCardBGImagesInList();
-      ImageSwapHandler.ReplaceCardBorderImagesInList();
-      ImageSwapHandler.ReplaceCardFoilMaskImagesInList();
-      ImageSwapHandler.ReplaceCardFrontImagesInList();
       ImageSwapHandler.SetBaseMonsterIcons();
       ImageSwapHandler.SetCatJobMonsterIcons();
       ImageSwapHandler.SetFantasyRPGMonsterIcons();
@@ -30,6 +25,44 @@ namespace MinaCardsMod.Handlers
       ExtrasHandler.AddHiddenCards();
     }
 
+    public static void SetCardExtrasImages(CardUI __instance, CardData cardData)
+    {
+      bool flag1 = false;
+      bool isGhost = cardData.expansionType == ECardExpansionType.Ghost;
+      CardUI cardUi = !isGhost || !((UnityEngine.Object) __instance.m_GhostCard != (UnityEngine.Object) null) ? __instance : ExtrasHandler.CurrentCardUI(isGhost, __instance, __instance.m_GhostCard);
+      bool flag2 = cardData.expansionType == ECardExpansionType.Megabot || cardData.expansionType == ECardExpansionType.FantasyRPG || cardData.expansionType == ECardExpansionType.CatJob;
+      if (MinaCardsModPlugin.CustomBaseMonsterImages.Value && !flag2)
+        flag1 = true;
+      if (MinaCardsModPlugin.CustomNewExpansionImages.Value && flag2)
+        flag1 = true;
+      if (flag1)
+      {
+        foreach (Sprite sprite in CacheHandler.cardExtrasImagesCache)
+        {
+          if ((UnityEngine.Object) sprite != (UnityEngine.Object) null)
+          {
+            Image componentBySpriteName = ExtrasHandler.GetImageComponentBySpriteName(cardUi.gameObject, sprite.name);
+            if ((UnityEngine.Object) componentBySpriteName != (UnityEngine.Object) null)
+              componentBySpriteName.sprite = sprite;
+          }
+        }
+      }
+      else
+      {
+        if (flag1)
+          return;
+        foreach (Sprite cardExtrasImages in CacheHandler.originalCardExtrasImagesList)
+        {
+          if ((UnityEngine.Object) cardExtrasImages != (UnityEngine.Object) null)
+          {
+            Image componentBySpriteName = ExtrasHandler.GetImageComponentBySpriteName(cardUi.gameObject, cardExtrasImages.name);
+            if ((UnityEngine.Object) componentBySpriteName != (UnityEngine.Object) null)
+              componentBySpriteName.sprite = cardExtrasImages;
+          }
+        }
+      }
+    }
+    
     public static void swapPackNames()
     {
       if (File.Exists(PlayerPatches.configPath + "Extras.ini"))
@@ -40,7 +73,8 @@ namespace MinaCardsMod.Handlers
         if (IniFile.GetStringValue("Extras", "FantasyRPG Pack Name") != null)
           PlayerPatches.newFantasyRPGPackName = IniFile.GetStringValue("Extras", "FantasyRPG Pack Name");
         if (IniFile.GetStringValue("Extras", "Megabot Pack Name") == null)
-          PlayerPatches.newMegaBotPackName = IniFile.GetStringValue("Extras", "Megabot Pack Name");
+          return;
+        PlayerPatches.newMegaBotPackName = IniFile.GetStringValue("Extras", "Megabot Pack Name");
       }
       else
         PlayerPatches.LogError("File doesn't exist " + PlayerPatches.configPath + "Extras.ini");
@@ -183,7 +217,7 @@ namespace MinaCardsMod.Handlers
       return cardConfig.IndividualOverrides ? cardConfig : fullExpansionConfig;
     }
     public static void SetCardBacks(Card3dUIGroup card3dUIGroup)
-{
+    {
     GameObject cardBackMesh = card3dUIGroup.m_CardBackMesh;
     CardUI cardUi = card3dUIGroup.m_CardUI;
     FieldInfo cardDataField = typeof(CardUI).GetField("m_CardData", BindingFlags.NonPublic | BindingFlags.Instance);
