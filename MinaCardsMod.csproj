@@ -35,7 +35,13 @@
         <WarningLevel>4</WarningLevel>
     </PropertyGroup>
     <ItemGroup>
+        <Compile Include="MinaCardsMod.Handlers\CacheFileListHandler.cs" />
+        <Compile Include="MinaCardsMod.Handlers\CacheHandler.cs" />
+        <Compile Include="MinaCardsMod.Handlers\ConfigGeneratorHelper.cs" />
+        <Compile Include="MinaCardsMod.Handlers\CustomCardObject.cs" />
         <Compile Include="MinaCardsMod.Handlers\CustomSwappedCardComponent.cs" />
+        <Compile Include="MinaCardsMod.Handlers\ExtrasHandler.cs" />
+        <Compile Include="MinaCardsMod.Handlers\ImageSwapHandler.cs" />
         <Compile Include="MinaCardsMod.Patches\IniFile.cs" />
         <Compile Include="MinaCardsMod.Patches\PlayerPatches.cs" />
         <Compile Include="MinaCardsMod\MinaCardsModPlugin.cs" />

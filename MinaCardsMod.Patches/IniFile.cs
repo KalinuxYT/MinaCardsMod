@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using UnityEngine;
 
@@ -66,7 +67,7 @@ namespace MinaCardsMod.Patches
     public static float GetFloatValue(string section, string key, float defaultValue = 0.0f)
     {
       float result;
-      return float.TryParse(IniFile.GetStringValue(section, key), out result) ? result : defaultValue;
+      return float.TryParse(IniFile.GetStringValue(section, key), NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result) ? result : defaultValue;
     }
 
     public static int GetIntValue(string section, string key, int defaultValue = 0)
@@ -96,7 +97,7 @@ namespace MinaCardsMod.Patches
         string[] strArray = stringValue.Replace("(", "").Replace(")", "").Split(',', StringSplitOptions.None);
         float result1;
         float result2;
-        if (strArray.Length == 2 && float.TryParse(strArray[0], out result1) && float.TryParse(strArray[1], out result2))
+        if (strArray.Length == 2 && float.TryParse(strArray[0], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result1) && float.TryParse(strArray[1], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result2))
           return new Vector2(result1, result2);
       }
       return defaultValue;
@@ -112,7 +113,7 @@ namespace MinaCardsMod.Patches
         float result2;
         float result3;
         float result4;
-        if (strArray.Length == 4 && float.TryParse(strArray[0], out result1) && float.TryParse(strArray[1], out result2) && float.TryParse(strArray[2], out result3) && float.TryParse(strArray[3], out result4))
+        if (strArray.Length == 4 && float.TryParse(strArray[0], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result1) && float.TryParse(strArray[1], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result2) && float.TryParse(strArray[2], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result3) && float.TryParse(strArray[3], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result4))
           return new Color(result1, result2, result3, result4);
       }
       return defaultValue;
@@ -127,7 +128,7 @@ namespace MinaCardsMod.Patches
 
     public static void SetFloatValue(string section, string key, float value)
     {
-      IniFile.SetValue(section, key, value.ToString());
+      IniFile.SetValue(section, key, value.ToString((IFormatProvider) CultureInfo.InvariantCulture));
     }
 
     public static void SetIntValue(string section, string key, int value)
@@ -142,13 +143,13 @@ namespace MinaCardsMod.Patches
 
     public static void SetVector2Value(string section, string key, Vector2 value)
     {
-      string str = string.Format("{0},{1}", (object) value.x, (object) value.y);
+      string str = value.x.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.y.ToString((IFormatProvider) CultureInfo.InvariantCulture);
       IniFile.SetValue(section, key, str);
     }
 
     public static void SetColorValue(string section, string key, Color value)
     {
-      string str = string.Format("{0},{1},{2},{3}", (object) value.r, (object) value.g, (object) value.b, (object) value.a);
+      string str = value.r.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.g.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.b.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.a.ToString((IFormatProvider) CultureInfo.InvariantCulture);
       IniFile.SetValue(section, key, str);
     }
 
@@ -186,7 +187,7 @@ namespace MinaCardsMod.Patches
     public static float GetFloatValueOther(string section, string key, float defaultValue = 0.0f)
     {
       float result;
-      return float.TryParse(IniFile.GetStringValueOther(section, key), out result) ? result : defaultValue;
+      return float.TryParse(IniFile.GetStringValueOther(section, key), NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result) ? result : defaultValue;
     }
 
     public static int GetIntValueOther(string section, string key, int defaultValue = 0)
@@ -216,7 +217,7 @@ namespace MinaCardsMod.Patches
         string[] strArray = stringValueOther.Replace("(", "").Replace(")", "").Split(',', StringSplitOptions.None);
         float result1;
         float result2;
-        if (strArray.Length == 2 && float.TryParse(strArray[0], out result1) && float.TryParse(strArray[1], out result2))
+        if (strArray.Length == 2 && float.TryParse(strArray[0], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result1) && float.TryParse(strArray[1], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result2))
           return new Vector2(result1, result2);
       }
       return defaultValue;
@@ -232,7 +233,7 @@ namespace MinaCardsMod.Patches
         float result2;
         float result3;
         float result4;
-        if (strArray.Length == 4 && float.TryParse(strArray[0], out result1) && float.TryParse(strArray[1], out result2) && float.TryParse(strArray[2], out result3) && float.TryParse(strArray[3], out result4))
+        if (strArray.Length == 4 && float.TryParse(strArray[0], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result1) && float.TryParse(strArray[1], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result2) && float.TryParse(strArray[2], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result3) && float.TryParse(strArray[3], NumberStyles.Float, (IFormatProvider) CultureInfo.InvariantCulture, out result4))
           return new Color(result1, result2, result3, result4);
       }
       return defaultValue;
@@ -247,7 +248,7 @@ namespace MinaCardsMod.Patches
 
     public static void SetFloatValueOther(string section, string key, float value)
     {
-      IniFile.SetValueOther(section, key, value.ToString());
+      IniFile.SetValueOther(section, key, value.ToString((IFormatProvider) CultureInfo.InvariantCulture));
     }
 
     public static void SetIntValueOther(string section, string key, int value)
@@ -262,13 +263,13 @@ namespace MinaCardsMod.Patches
 
     public static void SetVector2ValueOther(string section, string key, Vector2 value)
     {
-      string str = string.Format("{0},{1}", (object) value.x, (object) value.y);
+      string str = value.x.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.y.ToString((IFormatProvider) CultureInfo.InvariantCulture);
       IniFile.SetValueOther(section, key, str);
     }
 
     public static void SetColorValueOther(string section, string key, Color value)
     {
-      string str = string.Format("{0},{1},{2},{3}", (object) value.r, (object) value.g, (object) value.b, (object) value.a);
+      string str = value.r.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.g.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.b.ToString((IFormatProvider) CultureInfo.InvariantCulture) + "," + value.a.ToString((IFormatProvider) CultureInfo.InvariantCulture);
       IniFile.SetValueOther(section, key, str);
     }
 
