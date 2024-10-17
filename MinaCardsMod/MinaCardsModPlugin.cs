@@ -52,7 +52,7 @@ namespace MinaCardsMod
       this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.3.1-Hardened is loading...");
       MinaCardsModPlugin.Harmony.PatchAll();
       this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.3.1-Hardened is loaded.");
-      this.Logger.LogWarning((object) "This is a 'Fragile' build, this means any update to the game may cause the mod to break. This mod is compatible with v0.47.3 of the game.");
+      this.Logger.LogWarning((object) "This is a 'Hardened' build, this means any update to the game should not cause major issues. This mod is compatible with v0.47.3 of the game.");
       MinaCardsModPlugin.Log = this.Logger;
     }
 
