@@ -1,6 +1,7 @@
 using HarmonyLib;
 using I2.Loc;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -37,33 +38,50 @@ namespace MinaCardsMod.Patches
     public static string tetramonConfigPath = PlayerPatches.configPath + "TetramonConfigs/";
     public static CustomCardObject lastLoadedCard;
     public static CustomCardObject lastLoadedFullExpansionCard;
-    public static string newCatJobPackName = "CatJob";
-    public static string newFantasyRPGPackName = "FantasyRPG";
-    public static string newMegaBotPackName = "Megabot";
+    public static string newCatJobPackName = LocalizationManager.GetTranslation("CatJob");
+    public static string newFantasyRPGPackName = LocalizationManager.GetTranslation("FantasyRPG");
+    public static string newMegaBotPackName = LocalizationManager.GetTranslation("Megabot");
+    public static Color defaultButtonBorder = new Color(0.118f, 0.309f, 0.537f, 1f);
+    public static Color defaultButtonMidtone = new Color(0.09f, 0.664f, 1f, 1f);
+    public static Color defaultButtonHighlight = new Color(0.353f, 0.909f, 1f, 1f);
+    public static Color newButtonBorder = new Color(0.4f, 0.125f, 0.05f, 1f);
+    public static Color newButtonMidtone = new Color(0.5f, 0.125f, 0.7f, 1f);
+    public static Color newButtonHighlight = new Color(0.6f, 0.2f, 0.75f, 1f);
+    public static Vector2 defaultTetramonMonsterImageSize = new Vector2(0.2f, 197f);
+    public static Vector2 defaultTetramonMonsterImagePosition = new Vector2(0.0f, -21f);
+    public static Vector2 defaultTetramonMonsterFullArtImageSize = new Vector2(0.0f, 442.45f);
+    public static Vector2 defaultTetramonMonsterFullArtImagePosition = new Vector2(0.0f, -66f);
+    public static Vector2 defaultGhostMonsterImageSize = new Vector2(0.0f, 205.75f);
+    public static Vector2 defaultGhostMonsterImagePosition = new Vector2(-9.1f, -6.4f);
+    public static Vector2 defaultOtherMonsterImagePosition = new Vector2(0.0f, -96f);
+    public static Vector2 defaultOtherMonsterFullArtImagePosition = new Vector2(0.0f, -116f);
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(InventoryBase), "Awake")]
-    public static void Awake()
+    [HarmonyPatch(typeof (CGameData), "PropagateLoadData")]
+    public static void CGameData_PropagateLoadData_Postfix()
     {
-      ImageSwapHandler.CloneOriginalSpriteLists();
-      ImageSwapHandler.CloneOriginalCardBackTexture();
-      ImageSwapHandler.GetOriginalMonsterSprites();
-      ImageSwapHandler.SetBaseMonsterIcons();
-      ImageSwapHandler.SetCatJobMonsterIcons();
-      ImageSwapHandler.SetFantasyRPGMonsterIcons();
-      ImageSwapHandler.SetMegabotMonsterIcons();
-      ExtrasHandler.swapPackNames();
+      PlayerPatches.Log("Done doing propogate");
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof (CPlayerData), "CPlayer_OnSetFame")]
+    public static void CPlayerData_CPlayer_OnSetFame_Postfix() => ExtrasHandler.DoFirstWorldLoad();
+
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof (ItemSpawnManager), "Start")]
+    public static void ItemSpawnManager_Start_Postfix()
+    {
       ExtrasHandler.SwapNewPackItemImages();
-      ExtrasHandler.AddHiddenCards();
+      ExtrasHandler.SetPreviousEvolutions();
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CGameManager), "OnLevelFinishedLoading")]
+    [HarmonyPatch(typeof (CGameManager), "OnLevelFinishedLoading")]
     public static void CGameManager_OnLevelFinishedLoading_Postfix(
       ref Scene scene,
       LoadSceneMode mode)
     {
-      if (MinaCardsModPlugin.isConfigGeneratorBuild && CSingleton<CGameManager>.Instance.m_IsGameLevel)
+      if (CSingleton<CGameManager>.Instance.m_IsGameLevel)
         ExtrasHandler.AddHiddenCards();
       if (!(scene.name == "Title") || CacheHandler.firstLoad || MinaCardsModPlugin.isConfigGeneratorBuild)
         return;
@@ -71,26 +89,142 @@ namespace MinaCardsMod.Patches
       CacheHandler.firstLoad = true;
     }
 
-    [HarmonyPostfix]
-    [HarmonyPatch(typeof(Card3dUIGroup), "Start")]
-    public static void Card3dUIGroup_Start_Postfix(Card3dUIGroup __instance)
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof (CardOpeningSequence), "InitOpenSequence")]
+    public static void InitOpenSequence_Postfix(CardOpeningSequence __instance)
     {
-      ExtrasHandler.SetCardBacks(__instance);
+      if (__instance.m_Card3dUIList.Count<Card3dUIGroup>() <= 0)
+        return;
+      foreach (Card3dUIGroup card3dUi in __instance.m_Card3dUIList)
+        ExtrasHandler.SetCardBacks(card3dUi);
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(InteractionPlayerController), "AddHoldCard")]
+    [HarmonyPatch(typeof (InteractionPlayerController), "AddHoldCard")]
     public static void InteractionPlayerController_AddHoldCard_Postfix(
       InteractionPlayerController __instance,
       InteractableCard3d card3d)
     {
-      if (!(bool)(UnityEngine.Object)card3d)
+      if (!(bool) (UnityEngine.Object) card3d)
         return;
       ExtrasHandler.SetCardBacks(card3d.m_Card3dUI);
     }
 
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof (CardExpansionSelectScreen), "OpenScreen")]
+    public static void CardExpansionSelectScreen_OpenScreen_Postfix(
+      CardExpansionSelectScreen __instance)
+    {
+      GameObject screenGrp = CSingleton<CardExpansionSelectScreen>.Instance.m_ScreenGrp;
+      Transform[] componentsInChildren1 = screenGrp.GetComponentsInChildren<Transform>();
+      Transform transform1 = ((IEnumerable<Transform>) componentsInChildren1).FirstOrDefault<Transform>((Func<Transform, bool>) (t => t.name == "Tetramon_Button"));
+      Transform transform2 = ((IEnumerable<Transform>) componentsInChildren1).FirstOrDefault<Transform>((Func<Transform, bool>) (t => t.name == "Destiny_Button"));
+      Transform transform3 = ((IEnumerable<Transform>) componentsInChildren1).FirstOrDefault<Transform>((Func<Transform, bool>) (t => t.name == "Ghost_Button"));
+      if ((bool) (UnityEngine.Object) transform1 && (bool) (UnityEngine.Object) transform2 && (bool) (UnityEngine.Object) transform3)
+      {
+        List<Transform> transformList = new List<Transform>()
+        {
+          transform1,
+          transform2,
+          transform3
+        };
+        Color color1 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newButtonBorder : PlayerPatches.defaultButtonBorder;
+        Color color2 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newButtonMidtone : PlayerPatches.defaultButtonMidtone;
+        Color color3 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newButtonHighlight : PlayerPatches.defaultButtonHighlight;
+        foreach (Component component in transformList)
+        {
+          foreach (Image componentsInChild in component.GetComponentsInChildren<Image>())
+          {
+            switch (componentsInChild.name)
+            {
+              case "BGBorder":
+                componentsInChild.color = color1;
+                break;
+              case "BGMidtone":
+                componentsInChild.color = color2;
+                break;
+              case "BGHighlight":
+                componentsInChild.color = color3;
+                break;
+            }
+          }
+        }
+      }
+      TMP_Text[] componentsInChildren2 = screenGrp.GetComponentsInChildren<TMP_Text>();
+      string translation1 = LocalizationManager.GetTranslation("Tetramon Base");
+      string translation2 = LocalizationManager.GetTranslation("Tetramon Destiny");
+      string translation3 = LocalizationManager.GetTranslation("Tetramon Ghost");
+      string str1 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newMegaBotPackName : translation1;
+      string str2 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newFantasyRPGPackName : translation2;
+      string str3 = MinaCardsModPlugin.SwapExpansions.Value ? PlayerPatches.newCatJobPackName : translation3;
+      foreach (TMP_Text tmpText in componentsInChildren2)
+      {
+        if (!string.IsNullOrEmpty(tmpText.text))
+        {
+          if (tmpText.text == translation1 || tmpText.text == PlayerPatches.newMegaBotPackName)
+            tmpText.text = str1;
+          else if (tmpText.text == translation2 || tmpText.text == PlayerPatches.newFantasyRPGPackName)
+            tmpText.text = str2;
+          else if (tmpText.text == translation3 || tmpText.text == PlayerPatches.newCatJobPackName)
+            tmpText.text = str3;
+        }
+      }
+    }
+
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(CollectionBinderUI), "OnPressSwitchExpansion")]
+    [HarmonyPatch(typeof (CardExpansionSelectScreen), "OpenScreen")]
+    public static void CardExpansionSelectScreen_OpenScreen_Prefix(
+      ref ECardExpansionType initCardExpansion)
+    {
+      int num = (int) initCardExpansion;
+      if (num < 3)
+        return;
+      initCardExpansion = (ECardExpansionType) (num - 3);
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(CheckPriceScreen), "OnCardExpansionUpdated")]
+    public static void CheckPriceScreen_OnCardExpansionUpdated_Prefix(
+      CheckPriceScreen __instance,
+      ref CEventPlayer_OnCardExpansionSelectScreenUpdated evt)
+    {
+      if (!MinaCardsModPlugin.SwapExpansions.Value)
+        return;
+      var property = AccessTools.Property(typeof(CEventPlayer_OnCardExpansionSelectScreenUpdated), "m_CardExpansionTypeIndex");
+      if (property != null)
+      {
+        int currentValue = (int)property.GetValue(evt);
+        property.SetValue(evt, currentValue + 3);
+      }
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof (InventoryBase), "GetCardExpansionName")]
+    public static bool InventoryBase_GetCardExpansionName_Prefix(
+      InventoryBase __instance,
+      ECardExpansionType cardExpansion,
+      ref string __result)
+    {
+      if (cardExpansion == ECardExpansionType.Tetramon || cardExpansion == ECardExpansionType.Destiny || cardExpansion == ECardExpansionType.Ghost)
+        return true;
+      switch (cardExpansion)
+      {
+        case ECardExpansionType.Megabot:
+          __result = PlayerPatches.newMegaBotPackName;
+          return false;
+        case ECardExpansionType.FantasyRPG:
+          __result = PlayerPatches.newFantasyRPGPackName;
+          return false;
+        case ECardExpansionType.CatJob:
+          __result = PlayerPatches.newCatJobPackName;
+          return false;
+        default:
+          return true;
+      }
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof (CollectionBinderUI), "OnPressSwitchExpansion")]
     public static bool CollectionBinderUI_OnPressSwitchExpansion_Prefix(
       ref CollectionBinderUI __instance,
       ref int expansionIndex)
@@ -101,18 +235,12 @@ namespace MinaCardsMod.Patches
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CollectionBinderUI), "OpenSortAlbumScreen")]
+    [HarmonyPatch(typeof (CollectionBinderUI), "OpenSortAlbumScreen")]
     public static void CollectionBinderUI_OpenSortAlbumScreen_HarmonyPostfix(
       ref CollectionBinderUI __instance,
       int sortingMethodIndex,
       ref int currentExpansionIndex)
     {
-      Color color1 = new Color(0.118f, 0.309f, 0.537f, 1f);
-      Color color2 = new Color(0.09f, 0.664f, 1f, 1f);
-      Color color3 = new Color(0.353f, 0.909f, 1f, 1f);
-      Color color4 = new Color(0.4f, 0.125f, 0.05f, 1f);
-      Color color5 = new Color(0.5f, 0.125f, 0.7f, 1f);
-      Color color6 = new Color(0.6f, 0.2f, 0.75f, 1f);
       if (MinaCardsModPlugin.SwapExpansions.Value)
       {
         __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>().text = PlayerPatches.newMegaBotPackName;
@@ -123,29 +251,29 @@ namespace MinaCardsMod.Patches
           foreach (Image componentsInChild in expansionBtn.GetComponentsInChildren<Image>())
           {
             if (componentsInChild.name == "BGBorder")
-              componentsInChild.color = color4;
+              componentsInChild.color = PlayerPatches.newButtonBorder;
             else if (componentsInChild.name == "BGMidtone")
-              componentsInChild.color = color5;
+              componentsInChild.color = PlayerPatches.newButtonMidtone;
             else if (componentsInChild.name == "BGHighlight")
-              componentsInChild.color = color6;
+              componentsInChild.color = PlayerPatches.newButtonHighlight;
           }
         }
       }
       else
       {
         __instance.m_ExpansionBtnList[0].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Tetramon");
-        __instance.m_ExpansionBtnList[1].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Destiny"); 
+        __instance.m_ExpansionBtnList[1].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Destiny");
         __instance.m_ExpansionBtnList[2].GetComponentInChildren<TMP_Text>().text = LocalizationManager.GetTranslation("Ghost");
         foreach (Component expansionBtn in __instance.m_ExpansionBtnList)
         {
           foreach (Image componentsInChild in expansionBtn.GetComponentsInChildren<Image>())
           {
             if (componentsInChild.name == "BGBorder")
-              componentsInChild.color = color1;
+              componentsInChild.color = PlayerPatches.defaultButtonBorder;
             else if (componentsInChild.name == "BGMidtone")
-              componentsInChild.color = color2;
+              componentsInChild.color = PlayerPatches.defaultButtonMidtone;
             else if (componentsInChild.name == "BGHighlight")
-              componentsInChild.color = color3;
+              componentsInChild.color = PlayerPatches.defaultButtonHighlight;
           }
         }
       }
@@ -155,7 +283,7 @@ namespace MinaCardsMod.Patches
     }
 
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(CollectionBinderUI), "OpenSortAlbumScreen")]
+    [HarmonyPatch(typeof (CollectionBinderUI), "OpenSortAlbumScreen")]
     public static bool CollectionBinderUI_OpenSortAlbumScreen_Prefix(
       ref CollectionBinderUI __instance,
       int sortingMethodIndex,
@@ -177,13 +305,9 @@ namespace MinaCardsMod.Patches
       bool isGhost = cardData.expansionType == ECardExpansionType.Ghost;
       bool isFoil = cardData.isFoil;
       if (__instance.m_CollectionBinderUI.m_CardNameText.text != __instance.m_CurrentSpawnedInteractableCard3d.m_Card3dUI.m_CardUI.m_MonsterNameText.text)
-														
         __instance.m_CollectionBinderUI.m_CardNameText.text = __instance.m_CurrentSpawnedInteractableCard3d.m_Card3dUI.m_CardUI.m_MonsterNameText.text;
-										   
       CardUI cardUi1 = __instance.m_CurrentViewInteractableCard3d.m_Card3dUI.m_CardUI;
       CardUI cardUi2 = !isGhost || !((UnityEngine.Object) cardUi1.m_GhostCard != (UnityEngine.Object) null) ? __instance.m_CurrentViewInteractableCard3d.m_Card3dUI.m_CardUI : ExtrasHandler.CurrentCardUI(isGhost, cardUi1, cardUi1.m_GhostCard);
-																		
-																			 
       string text1 = cardUi2.m_FirstEditionText.text;
       string text2 = cardUi2.m_RarityText.text;
       string str1 = "";
@@ -194,7 +318,6 @@ namespace MinaCardsMod.Patches
         if ((UnityEngine.Object) component != (UnityEngine.Object) null)
           str1 = component.text;
       }
-
       string str2 = "";
       if (!isFoil)
         str2 = text1 + " " + text2;
@@ -204,7 +327,7 @@ namespace MinaCardsMod.Patches
     }
 
     [HarmonyPrefix]
-    [HarmonyPatch(typeof(RestockItemPanelUI), "Init")]
+    [HarmonyPatch(typeof (RestockItemPanelUI), "Init")]
     public static bool RestockItemPanelUI_Init_Prefix(
       RestockItemPanelUI __instance,
       RestockItemScreen restockItemScreen,
@@ -219,7 +342,6 @@ namespace MinaCardsMod.Patches
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownItemType.Add(EItemType.MegabotPack);
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownItemType.Add(EItemType.GhostPack);
         }
-
         if (!CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Contains(EItemType.FantasyRPGPack))
         {
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Add(EItemType.FantasyRPGPack);
@@ -227,7 +349,6 @@ namespace MinaCardsMod.Patches
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Add(EItemType.MegabotPack);
           CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_ShownAllItemType.Add(EItemType.GhostPack);
         }
-
         RestockData restockData1 = new RestockData();
         RestockData restockData2 = new RestockData();
         RestockData restockData3 = new RestockData();
@@ -278,12 +399,11 @@ namespace MinaCardsMod.Patches
         CSingleton<InventoryBase>.Instance.m_StockItemData_SO.m_RestockDataList.Add(restockData8);
         PlayerPatches.containsNew = true;
       }
-
       return true;
     }
 
     [HarmonyPostfix]
-    [HarmonyPatch(typeof(CardUI), "SetCardUI")]
+    [HarmonyPatch(typeof (CardUI), "SetCardUI")]
     public static void CardUI_SetCardUI_Main_Postfix(CardUI __instance, CardData cardData)
     {
       if (MinaCardsModPlugin.isConfigGeneratorBuild)
@@ -292,397 +412,363 @@ namespace MinaCardsMod.Patches
         ConfigGeneratorHelper.WriteAllFullExpansionConfigs();
       }
       ExtrasHandler.SetCardExtrasImages(__instance, cardData);
-      if (!ExtrasHandler.isCardConfigDriven(cardData) || MinaCardsModPlugin.isConfigGeneratorBuild)
-        return;
-      CustomCardObject cardConfig = (CustomCardObject)null;
-      CustomCardObject fullExpansionConfig = (CustomCardObject)null;
-      string fileName = (string)null;
-      string expansionName = (string)null;
       bool flag = cardData.borderType == ECardBorderType.FullArt;
       bool isGhost = cardData.expansionType == ECardExpansionType.Ghost;
-      if (isGhost)
+      CardUI cardUi1 = !isGhost || !((UnityEngine.Object) __instance.m_GhostCard != (UnityEngine.Object) null) ? __instance : ExtrasHandler.CurrentCardUI(isGhost, __instance, __instance.m_GhostCard);
+      if (ExtrasHandler.isCardConfigDriven(cardData) && !MinaCardsModPlugin.isConfigGeneratorBuild)
       {
-        fileName = cardData.monsterType.ToString();
-        expansionName = cardData.expansionType.ToString();
-      }
-      else if (!isGhost)
-      {
-        if (!flag)
+        CustomCardObject cardConfig = (CustomCardObject) null;
+        CustomCardObject fullExpansionConfig = (CustomCardObject) null;
+        string fileName = (string) null;
+        string expansionName = (string) null;
+        if (isGhost)
         {
           fileName = cardData.monsterType.ToString();
           expansionName = cardData.expansionType.ToString();
         }
-        else if (flag)
+        else if (!isGhost)
         {
-          fileName = cardData.monsterType.ToString() + "FullArt";
-          expansionName = cardData.expansionType.ToString() + "FullArt";
+          if (!flag)
+          {
+            fileName = cardData.monsterType.ToString();
+            expansionName = cardData.expansionType.ToString();
+          }
+          else if (flag)
+          {
+            fileName = cardData.monsterType.ToString() + "FullArt";
+            expansionName = cardData.expansionType.ToString() + "FullArt";
+          }
         }
-      }
-
-      if (fileName != null && expansionName != null)
-      {
-        if (cardData.expansionType == ECardExpansionType.Tetramon)
+        if (fileName != null && expansionName != null)
         {
-          CustomCardObject customCardObject1 = CacheHandler.tetramonConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject1 != null)
-            cardConfig = customCardObject1;
+          if (cardData.expansionType == ECardExpansionType.Tetramon)
+          {
+            CustomCardObject customCardObject1 = CacheHandler.tetramonConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject1 != null)
+              cardConfig = customCardObject1;
+            else
+              PlayerPatches.LogError("Null card Tetramon");
+          }
+          else if (cardData.expansionType == ECardExpansionType.Destiny)
+          {
+            CustomCardObject customCardObject2 = CacheHandler.destinyConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject2 != null)
+              cardConfig = customCardObject2;
+            else
+              PlayerPatches.LogError("Null card Destiny");
+          }
+          else if (cardData.expansionType == ECardExpansionType.Ghost)
+          {
+            CustomCardObject customCardObject3 = CacheHandler.ghostConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject3 != null)
+              cardConfig = customCardObject3;
+            else
+              PlayerPatches.LogError("Null card Ghost");
+          }
+          else if (cardData.expansionType == ECardExpansionType.CatJob)
+          {
+            CustomCardObject customCardObject4 = CacheHandler.catJobConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject4 != null)
+              cardConfig = customCardObject4;
+            else
+              PlayerPatches.LogError("Null card CatJob");
+          }
+          else if (cardData.expansionType == ECardExpansionType.FantasyRPG)
+          {
+            CustomCardObject customCardObject5 = CacheHandler.fantasyRPGConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject5 != null)
+              cardConfig = customCardObject5;
+            else
+              PlayerPatches.LogError("Null card Fantasy");
+          }
+          else if (cardData.expansionType == ECardExpansionType.Megabot)
+          {
+            CustomCardObject customCardObject6 = CacheHandler.megabotConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
+            if (customCardObject6 != null)
+              cardConfig = customCardObject6;
+            else
+              PlayerPatches.LogError("Null card Megabot");
+          }
+          CustomCardObject customCardObject7 = CacheHandler.fullExpansionsConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == expansionName));
+          if (customCardObject7 != null)
+            fullExpansionConfig = customCardObject7;
           else
-            PlayerPatches.LogError("Null card Tetramon");
+            PlayerPatches.LogError("Null card Expansion");
         }
-        else if (cardData.expansionType == ECardExpansionType.Destiny)
-        {
-          CustomCardObject customCardObject2 = CacheHandler.destinyConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject2 != null)
-            cardConfig = customCardObject2;
-          else
-            PlayerPatches.LogError("Null card Destiny");
-        }
-        else if (cardData.expansionType == ECardExpansionType.Ghost)
-        {
-          CustomCardObject customCardObject3 = CacheHandler.ghostConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject3 != null)
-            cardConfig = customCardObject3;
-          else
-            PlayerPatches.LogError("Null card Ghost");
-        }
-        else if (cardData.expansionType == ECardExpansionType.CatJob)
-        {
-          CustomCardObject customCardObject4 = CacheHandler.catJobConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject4 != null)
-            cardConfig = customCardObject4;
-          else
-            PlayerPatches.LogError("Null card CatJob");
-        }
-        else if (cardData.expansionType == ECardExpansionType.FantasyRPG)
-        {
-          CustomCardObject customCardObject5 = CacheHandler.fantasyRPGConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject5 != null)
-            cardConfig = customCardObject5;
-          else
-            PlayerPatches.LogError("Null card Fantasy");
-        }
-        else if (cardData.expansionType == ECardExpansionType.Megabot)
-        {
-          CustomCardObject customCardObject6 = CacheHandler.megabotConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == fileName));
-          if (customCardObject6 != null)
-            cardConfig = customCardObject6;
-          else
-            PlayerPatches.LogError("Null card Megabot");
-        }
-
-        CustomCardObject customCardObject7 = CacheHandler.fullExpansionsConfigCache.FirstOrDefault<CustomCardObject>((Func<CustomCardObject, bool>) (customCardObject => customCardObject.Header == expansionName));
-        if (customCardObject7 != null)
-          fullExpansionConfig = customCardObject7;
-        else
-          PlayerPatches.LogError("Null card Expansion");
-      }
-
-      if (cardConfig != null && fullExpansionConfig != null)
-      {
-        CustomCardObject customCardObject = ExtrasHandler.SelectConfig(cardConfig, fullExpansionConfig);
-        CardUI cardUi1 = !isGhost || !((UnityEngine.Object)__instance.m_GhostCard != (UnityEngine.Object)null)
-          ? __instance
-          : ExtrasHandler.CurrentCardUI(isGhost, __instance, __instance.m_GhostCard);
+        if (cardConfig == null || fullExpansionConfig == null)
+          return;
+        CustomCardObject customCardObject8 = ExtrasHandler.SelectConfig(cardConfig, fullExpansionConfig);
         cardUi1.m_MonsterNameText.text = cardConfig.Name;
         if (!isGhost)
         {
           cardUi1.m_DescriptionText.text = cardConfig.Description;
-          if (flag && (UnityEngine.Object)__instance.m_FullArtCard != (UnityEngine.Object)null &&
-              (UnityEngine.Object)__instance.m_FullArtCard.m_DescriptionText != (UnityEngine.Object)null &&
-              __instance.m_FullArtCard.m_DescriptionText.text != null)
+          if (flag && (UnityEngine.Object) __instance.m_FullArtCard != (UnityEngine.Object) null && (UnityEngine.Object) __instance.m_FullArtCard.m_DescriptionText != (UnityEngine.Object) null && __instance.m_FullArtCard.m_DescriptionText.text != null)
             __instance.m_FullArtCard.m_DescriptionText.text = cardConfig.Description;
-
-          var monsterDataField =
-            typeof(CardUI).GetField("m_MonsterData", BindingFlags.NonPublic | BindingFlags.Instance);
-          var monsterData = monsterDataField?.GetValue(cardUi1);
-          if (monsterData != null)
+          cardUi1.m_ChampionText.text = customCardObject8.ChampionText;
+          cardUi1.m_DescriptionText.enabled = customCardObject8.DescriptionEnabled;
+          cardUi1.m_DescriptionText.fontSize = customCardObject8.DescriptionFontSize;
+          cardUi1.m_DescriptionText.fontSizeMin = customCardObject8.DescriptionFontSizeMin;
+          cardUi1.m_DescriptionText.fontSizeMax = customCardObject8.DescriptionFontSizeMax;
+          cardUi1.m_DescriptionText.color = customCardObject8.DescriptionFontColorRGBA;
+          cardUi1.m_DescriptionText.rectTransform.anchoredPosition = customCardObject8.DescriptionPosition;
+          cardUi1.m_EvoPreviousStageIcon.enabled = customCardObject8.PreviousEvolutionIconEnabled;
+          cardUi1.m_EvoPreviousStageNameText.enabled = customCardObject8.PreviousEvolutionBoxEnabled;
+          FieldInfo monsterDataField = typeof(CardUI).GetField("m_MonsterData", BindingFlags.NonPublic | BindingFlags.Instance);
+          if (monsterDataField != null)
           {
-            FieldInfo previousEvolutionField = monsterData.GetType().GetField("PreviousEvolution",
-              BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            EMonsterType result;
-            if (Enum.TryParse<EMonsterType>(cardConfig.PreviousEvolution, out result))
-              previousEvolutionField?.SetValue(monsterData, result);
-          }
-
-          cardUi1.m_ChampionText.text = customCardObject.ChampionText;
-          cardUi1.m_DescriptionText.enabled = customCardObject.DescriptionEnabled;
-          cardUi1.m_DescriptionText.fontSize = customCardObject.DescriptionFontSize;
-          cardUi1.m_DescriptionText.fontSizeMin = customCardObject.DescriptionFontSizeMin;
-          cardUi1.m_DescriptionText.fontSizeMax = customCardObject.DescriptionFontSizeMax;
-          cardUi1.m_DescriptionText.color = customCardObject.DescriptionFontColorRGBA;
-          cardUi1.m_DescriptionText.rectTransform.anchoredPosition = customCardObject.DescriptionPosition;
-          cardUi1.m_EvoPreviousStageIcon.enabled = customCardObject.PreviousEvolutionIconEnabled;
-          cardUi1.m_EvoPreviousStageNameText.enabled = customCardObject.PreviousEvolutionBoxEnabled;
-          if (monsterData != null)
-          {
-            FieldInfo previousEvolutionField = monsterData.GetType().GetField("PreviousEvolution",
-              BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
-            EMonsterType previousEvolution = (EMonsterType)previousEvolutionField?.GetValue(monsterData);
-            if (previousEvolution == EMonsterType.None)
+            MonsterData monsterData = (MonsterData)monsterDataField.GetValue(cardUi1);
+            if (monsterData.PreviousEvolution == EMonsterType.None)
             {
-              if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBasicIcon") !=
-                  (UnityEngine.Object)null)
-                ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBasicIcon").enabled =
-                  customCardObject.BasicEvolutionIconEnabled;
-              if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoBasicText") !=
-                  (UnityEngine.Object)null)
+              if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBasicIcon") != (UnityEngine.Object)null)
+                ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBasicIcon").enabled = customCardObject8.BasicEvolutionIconEnabled;
+              if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoBasicText") != (UnityEngine.Object)null)
               {
-                TextMeshProUGUI textComponentByName =
-                  ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoBasicText");
-                textComponentByName.text = customCardObject.BasicEvolutionText;
-                textComponentByName.enabled = customCardObject.BasicEvolutionTextEnabled;
-                textComponentByName.fontSize = customCardObject.BasicEvolutionTextFontSize;
-                textComponentByName.fontSizeMin = customCardObject.BasicEvolutionTextFontSizeMin;
-                textComponentByName.fontSizeMax = customCardObject.BasicEvolutionTextFontSizeMax;
-                textComponentByName.color = customCardObject.BasicEvolutionTextFontColorRGBA;
-                textComponentByName.rectTransform.anchoredPosition = customCardObject.BasicEvolutionTextPosition;
-              }
-            }
-
-            cardUi1.m_EvoPreviousStageNameText.fontSize = customCardObject.PreviousEvolutionNameFontSize;
-            cardUi1.m_EvoPreviousStageNameText.fontSizeMin = customCardObject.PreviousEvolutionNameFontSizeMin;
-            cardUi1.m_EvoPreviousStageNameText.fontSizeMax = customCardObject.PreviousEvolutionNameFontSizeMax;
-            cardUi1.m_EvoPreviousStageNameText.color = customCardObject.PreviousEvolutionNameFontColorRGBA;
-            cardUi1.m_EvoPreviousStageNameText.rectTransform.anchoredPosition =
-              customCardObject.PreviousEvolutionNamePosition;
-          }
-
-          if (!flag)
-            cardUi1.m_NumberText.text = cardConfig.Number;
-          if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBG") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBG").enabled =
-              customCardObject.PreviousEvolutionBoxEnabled;
-          if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBorder") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBorder").enabled =
-              customCardObject.PreviousEvolutionBoxEnabled;
-          if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "TitleText") !=
-              (UnityEngine.Object)null)
-          {
-            TextMeshProUGUI textComponentByName = ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "TitleText");
-            textComponentByName.text = cardConfig.PlayEffectText;
-            textComponentByName.enabled = customCardObject.PlayEffectTextEnabled;
-            textComponentByName.fontSize = customCardObject.PlayEffectTextFontSize;
-            textComponentByName.fontSizeMin = customCardObject.PlayEffectTextFontSizeMin;
-            textComponentByName.fontSizeMax = customCardObject.PlayEffectTextFontSizeMax;
-            textComponentByName.color = customCardObject.PlayEffectTextFontColorRGBA;
-            textComponentByName.rectTransform.anchoredPosition = customCardObject.PlayEffectTextPosition;
-          }
-
-          if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoText") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoText").enabled =
-              customCardObject.PreviousEvolutionNameEnabled;
-          if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "TitleBG") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "TitleBG").enabled =
-              customCardObject.PlayEffectBoxEnabled;
-          if (isGhost | flag && (UnityEngine.Object)cardUi1.m_FirstEditionText != (UnityEngine.Object)null &&
-              cardUi1.m_FirstEditionText.text != null)
-            cardUi1.m_FirstEditionText.text = customCardObject.EditionText;
-          if ((UnityEngine.Object)cardUi1.m_FirstEditionText != (UnityEngine.Object)null && !isGhost && !flag &&
-              cardUi1.m_FirstEditionText.text != null)
-          {
-            switch (cardData.borderType)
-            {
-              case ECardBorderType.Base:
-                cardUi1.m_FirstEditionText.text = customCardObject.BasicEditionText;
-                break;
-              case ECardBorderType.FirstEdition:
-                cardUi1.m_FirstEditionText.text = customCardObject.FirstEditionText;
-                break;
-              case ECardBorderType.Silver:
-                cardUi1.m_FirstEditionText.text = customCardObject.SilverEditionText;
-                break;
-              case ECardBorderType.Gold:
-                cardUi1.m_FirstEditionText.text = customCardObject.GoldEditionText;
-                break;
-              case ECardBorderType.EX:
-                cardUi1.m_FirstEditionText.text = customCardObject.EXEditionText;
-                break;
-            }
-          }
-
-          cardUi1.m_MonsterNameText.enabled = customCardObject.NameEnabled;
-          cardUi1.m_MonsterNameText.fontSize = customCardObject.NameFontSize;
-          cardUi1.m_MonsterNameText.fontSizeMin = customCardObject.NameFontSizeMin;
-          cardUi1.m_MonsterNameText.fontSizeMax = customCardObject.NameFontSizeMax;
-          cardUi1.m_MonsterNameText.color = customCardObject.NameFontColorRGBA;
-          cardUi1.m_MonsterNameText.rectTransform.anchoredPosition = customCardObject.NamePosition;
-          if (!isGhost && !flag)
-          {
-            if ((UnityEngine.Object)cardUi1.m_FirstEditionText != (UnityEngine.Object)null &&
-                cardUi1.m_FirstEditionText.text != null)
-            {
-              cardUi1.m_FirstEditionText.fontSize = customCardObject.EditionTextFontSize;
-              cardUi1.m_FirstEditionText.fontSizeMin = customCardObject.EditionTextFontSizeMin;
-              cardUi1.m_FirstEditionText.fontSizeMax = customCardObject.EditionTextFontSizeMax;
-              cardUi1.m_FirstEditionText.color = customCardObject.EditionTextFontColorRGBA;
-              cardUi1.m_FirstEditionText.rectTransform.anchoredPosition = customCardObject.EditionTextPosition;
-            }
-
-            cardUi1.m_RarityText.text = cardConfig.Rarity;
-            cardUi1.m_NumberText.enabled = customCardObject.NumberEnabled;
-            cardUi1.m_NumberText.fontSize = customCardObject.NumberFontSize;
-            cardUi1.m_NumberText.fontSizeMin = customCardObject.NumberFontSizeMin;
-            cardUi1.m_NumberText.fontSizeMax = customCardObject.NumberFontSizeMax;
-            cardUi1.m_NumberText.color = customCardObject.NumberFontColorRGBA;
-            cardUi1.m_NumberText.rectTransform.anchoredPosition = customCardObject.NumberPosition;
-            cardUi1.m_FirstEditionText.enabled = customCardObject.EditionTextEnabled;
-            cardUi1.m_RarityText.enabled = customCardObject.RarityEnabled;
-            cardUi1.m_RarityText.fontSize = customCardObject.RarityFontSize;
-            cardUi1.m_RarityText.fontSizeMin = customCardObject.RarityFontSizeMin;
-            cardUi1.m_RarityText.fontSizeMax = customCardObject.RarityFontSizeMax;
-            cardUi1.m_RarityText.color = customCardObject.RarityFontColorRGBA;
-            cardUi1.m_RarityText.rectTransform.anchoredPosition = customCardObject.RarityPosition;
-          }
-
-          if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "RarityImage") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "RarityImage").enabled =
-              customCardObject.RarityImageEnabled;
-          if (!isGhost)
-          {
-            cardUi1.m_ChampionText.enabled = customCardObject.ChampionTextEnabled;
-            cardUi1.m_ChampionText.fontSize = customCardObject.ChampionFontSize;
-            cardUi1.m_ChampionText.fontSizeMin = customCardObject.ChampionFontSizeMin;
-            cardUi1.m_ChampionText.fontSizeMax = customCardObject.ChampionFontSizeMax;
-            cardUi1.m_ChampionText.color = customCardObject.ChampionFontColorRGBA;
-            cardUi1.m_ChampionText.rectTransform.anchoredPosition = customCardObject.ChampionPosition;
-          }
-
-          if (isGhost && (UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "CardStat") !=
-              (UnityEngine.Object)null)
-            ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "CardStat").enabled =
-              cardConfig.StatBackgroundImageEnabled;
-          cardUi1.m_Stat1Text.text = cardConfig.Stat1;
-          cardUi1.m_Stat1Text.enabled = customCardObject.Stat1Enabled;
-          cardUi1.m_Stat1Text.fontSize = customCardObject.Stat1FontSize;
-          cardUi1.m_Stat1Text.fontSizeMin = customCardObject.Stat1FontSizeMin;
-          cardUi1.m_Stat1Text.fontSizeMax = customCardObject.Stat1FontSizeMax;
-          cardUi1.m_Stat1Text.color = customCardObject.Stat1FontColorRGBA;
-          cardUi1.m_Stat1Text.rectTransform.anchoredPosition = customCardObject.Stat1Position;
-          cardUi1.m_Stat2Text.text = cardConfig.Stat2;
-          cardUi1.m_Stat2Text.enabled = customCardObject.Stat2Enabled;
-          cardUi1.m_Stat2Text.fontSize = customCardObject.Stat2FontSize;
-          cardUi1.m_Stat2Text.fontSizeMin = customCardObject.Stat2FontSizeMin;
-          cardUi1.m_Stat2Text.fontSizeMax = customCardObject.Stat2FontSizeMax;
-          cardUi1.m_Stat2Text.color = customCardObject.Stat2FontColorRGBA;
-          cardUi1.m_Stat2Text.rectTransform.anchoredPosition = customCardObject.Stat2Position;
-          cardUi1.m_Stat3Text.text = cardConfig.Stat3;
-          cardUi1.m_Stat3Text.enabled = customCardObject.Stat3Enabled;
-          cardUi1.m_Stat3Text.fontSize = customCardObject.Stat3FontSize;
-          cardUi1.m_Stat3Text.fontSizeMin = customCardObject.Stat3FontSizeMin;
-          cardUi1.m_Stat3Text.fontSizeMax = customCardObject.Stat3FontSizeMax;
-          cardUi1.m_Stat3Text.color = customCardObject.Stat3FontColorRGBA;
-          cardUi1.m_Stat3Text.rectTransform.anchoredPosition = customCardObject.Stat3Position;
-          cardUi1.m_Stat4Text.text = cardConfig.Stat4;
-          cardUi1.m_Stat4Text.enabled = customCardObject.Stat4Enabled;
-          cardUi1.m_Stat4Text.fontSize = customCardObject.Stat4FontSize;
-          cardUi1.m_Stat4Text.fontSizeMin = customCardObject.Stat4FontSizeMin;
-          cardUi1.m_Stat4Text.fontSizeMax = customCardObject.Stat4FontSizeMax;
-          cardUi1.m_Stat4Text.color = customCardObject.Stat4FontColorRGBA;
-          cardUi1.m_Stat4Text.rectTransform.anchoredPosition = customCardObject.Stat4Position;
-          if ((UnityEngine.Object)cardUi1.m_ArtistText != (UnityEngine.Object)null)
-          {
-            if (flag && (UnityEngine.Object)cardUi1.m_FullArtCard != (UnityEngine.Object)null &&
-                (UnityEngine.Object)cardUi1.m_FullArtCard.m_ArtistText != (UnityEngine.Object)null &&
-                cardUi1.m_FullArtCard.m_ArtistText.text != null)
-            {
-              cardUi1.m_FullArtCard.m_ArtistText.text = customCardObject.ArtistText;
-              cardUi1.m_FullArtCard.m_ArtistText.enabled = customCardObject.ArtistTextEnabled;
-              cardUi1.m_FullArtCard.m_ArtistText.fontSize = customCardObject.ArtistTextFontSize;
-              cardUi1.m_FullArtCard.m_ArtistText.fontSizeMin = customCardObject.ArtistTextFontSizeMin;
-              cardUi1.m_FullArtCard.m_ArtistText.fontSizeMax = customCardObject.ArtistTextFontSizeMax;
-              cardUi1.m_FullArtCard.m_ArtistText.color = customCardObject.ArtistTextFontColorRGBA;
-              cardUi1.m_FullArtCard.m_ArtistText.rectTransform.anchoredPosition = customCardObject.ArtistTextPosition;
-            }
-
-            cardUi1.m_ArtistText.text = customCardObject.ArtistText;
-            cardUi1.m_ArtistText.enabled = customCardObject.ArtistTextEnabled;
-            cardUi1.m_ArtistText.fontSize = customCardObject.ArtistTextFontSize;
-            cardUi1.m_ArtistText.fontSizeMin = customCardObject.ArtistTextFontSizeMin;
-            cardUi1.m_ArtistText.fontSizeMax = customCardObject.ArtistTextFontSizeMax;
-            cardUi1.m_ArtistText.color = customCardObject.ArtistTextFontColorRGBA;
-            cardUi1.m_ArtistText.rectTransform.anchoredPosition = customCardObject.ArtistTextPosition;
-          }
-
-          if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "CompanyText") !=
-              (UnityEngine.Object)null)
-          {
-            TextMeshProUGUI textComponentByName =
-              ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "CompanyText");
-            textComponentByName.text = customCardObject.CompanyText;
-            textComponentByName.enabled = customCardObject.CompanyTextEnabled;
-            textComponentByName.fontSize = customCardObject.CompanyTextFontSize;
-            textComponentByName.fontSizeMin = customCardObject.CompanyTextFontSizeMin;
-            textComponentByName.fontSizeMax = customCardObject.CompanyTextFontSizeMax;
-            textComponentByName.color = customCardObject.CompanyTextFontColorRGBA;
-            textComponentByName.rectTransform.anchoredPosition = customCardObject.CompanyTextPosition;
-          }
-
-          if (!isGhost)
-          {
-            bool monsterImageSizeLimit = customCardObject.RemoveMonsterImageSizeLimit;
-            if (flag)
-            {
-              if (monsterImageSizeLimit)
-                cardUi1.m_MonsterMask.enabled = false;
-              else if (!monsterImageSizeLimit)
-                cardUi1.m_MonsterMask.enabled = true;
-            }
-            else if (!flag)
-            {
-              cardUi1.m_MonsterMask.enabled = true;
-              Image imageComponentByName =
-                ExtrasHandler.GetImageComponentByName(cardUi1.m_MonsterMask.gameObject, "Image");
-              if (monsterImageSizeLimit)
-              {
-                if ((UnityEngine.Object)imageComponentByName != (UnityEngine.Object)null)
-                {
-                  imageComponentByName.maskable = false;
-                  cardUi1.m_CardFoilMaskImage.sprite = cardUi1.m_CardBackImage.sprite;
-                  cardUi1.m_MonsterMaskImage.enabled = false;
-                }
-              }
-              else if (!monsterImageSizeLimit && (UnityEngine.Object)imageComponentByName != (UnityEngine.Object)null)
-              {
-                imageComponentByName.maskable = true;
-                cardUi1.m_MonsterMaskImage.enabled = true;
+                TextMeshProUGUI textComponentByName = ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoBasicText");
+                textComponentByName.text = customCardObject8.BasicEvolutionText;
+                textComponentByName.enabled = customCardObject8.BasicEvolutionTextEnabled;
+                textComponentByName.fontSize = customCardObject8.BasicEvolutionTextFontSize;
+                textComponentByName.fontSizeMin = customCardObject8.BasicEvolutionTextFontSizeMin;
+                textComponentByName.fontSizeMax = customCardObject8.BasicEvolutionTextFontSizeMax;
+                textComponentByName.color = customCardObject8.BasicEvolutionTextFontColorRGBA;
+                textComponentByName.rectTransform.anchoredPosition = customCardObject8.BasicEvolutionTextPosition;
               }
             }
           }
-
-          if ((UnityEngine.Object)cardUi1.m_MonsterImage != (UnityEngine.Object)null)
+          cardUi1.m_EvoPreviousStageNameText.fontSize = customCardObject8.PreviousEvolutionNameFontSize;
+          cardUi1.m_EvoPreviousStageNameText.fontSizeMin = customCardObject8.PreviousEvolutionNameFontSizeMin;
+          cardUi1.m_EvoPreviousStageNameText.fontSizeMax = customCardObject8.PreviousEvolutionNameFontSizeMax;
+          cardUi1.m_EvoPreviousStageNameText.color = customCardObject8.PreviousEvolutionNameFontColorRGBA;
+          cardUi1.m_EvoPreviousStageNameText.rectTransform.anchoredPosition = customCardObject8.PreviousEvolutionNamePosition;
+        }
+        if (!flag)
+          cardUi1.m_NumberText.text = cardConfig.Number;
+        if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBG") != (UnityEngine.Object) null)
+          ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBG").enabled = customCardObject8.PreviousEvolutionBoxEnabled;
+        if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBorder") != (UnityEngine.Object) null)
+          ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "EvoBorder").enabled = customCardObject8.PreviousEvolutionBoxEnabled;
+        if ((UnityEngine.Object) ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "TitleText") != (UnityEngine.Object) null)
+        {
+          TextMeshProUGUI textComponentByName = ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "TitleText");
+          textComponentByName.text = cardConfig.PlayEffectText;
+          textComponentByName.enabled = customCardObject8.PlayEffectTextEnabled;
+          textComponentByName.fontSize = customCardObject8.PlayEffectTextFontSize;
+          textComponentByName.fontSizeMin = customCardObject8.PlayEffectTextFontSizeMin;
+          textComponentByName.fontSizeMax = customCardObject8.PlayEffectTextFontSizeMax;
+          textComponentByName.color = customCardObject8.PlayEffectTextFontColorRGBA;
+          textComponentByName.rectTransform.anchoredPosition = customCardObject8.PlayEffectTextPosition;
+        }
+        if ((UnityEngine.Object) ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoText") != (UnityEngine.Object) null)
+          ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "EvoText").enabled = customCardObject8.PreviousEvolutionNameEnabled;
+        if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "TitleBG") != (UnityEngine.Object) null)
+          ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "TitleBG").enabled = customCardObject8.PlayEffectBoxEnabled;
+        if (isGhost | flag && (UnityEngine.Object) cardUi1.m_FirstEditionText != (UnityEngine.Object) null && cardUi1.m_FirstEditionText.text != null)
+          cardUi1.m_FirstEditionText.text = customCardObject8.EditionText;
+        if ((UnityEngine.Object) cardUi1.m_FirstEditionText != (UnityEngine.Object) null && !isGhost && !flag && cardUi1.m_FirstEditionText.text != null)
+        {
+          switch (cardData.borderType)
           {
-            cardUi1.m_MonsterImage.rectTransform.sizeDelta = customCardObject.MonsterImageSize;
-            cardUi1.m_MonsterImage.rectTransform.anchoredPosition = customCardObject.MonsterImagePosition;
-          }
-
-          if (cardData.isFoil)
-          {
-            CardUI cardUi2 = cardUi1;
-            if ((UnityEngine.Object)cardUi2.transform.Find("FoilText") == (UnityEngine.Object)null)
-            {
-              TextMeshProUGUI textMeshProUgui = new GameObject("FoilText").AddComponent<TextMeshProUGUI>();
-              textMeshProUgui.text = customCardObject.FoilText;
-              textMeshProUgui.transform.SetParent(cardUi2.transform, false);
-              textMeshProUgui.enabled = false;
-              if (!((UnityEngine.Object)textMeshProUgui != (UnityEngine.Object)null) ||
-                  !((UnityEngine.Object)textMeshProUgui.transform.parent == (UnityEngine.Object)cardUi2.transform))
-                ;
-            }
-
-            Transform transform = cardUi2.transform.Find("FoilText");
-            if ((UnityEngine.Object)transform != (UnityEngine.Object)null)
-              transform.GetComponent<TextMeshProUGUI>().text = customCardObject.FoilText;
+            case ECardBorderType.Base:
+              cardUi1.m_FirstEditionText.text = customCardObject8.BasicEditionText;
+              break;
+            case ECardBorderType.FirstEdition:
+              cardUi1.m_FirstEditionText.text = customCardObject8.FirstEditionText;
+              break;
+            case ECardBorderType.Silver:
+              cardUi1.m_FirstEditionText.text = customCardObject8.SilverEditionText;
+              break;
+            case ECardBorderType.Gold:
+              cardUi1.m_FirstEditionText.text = customCardObject8.GoldEditionText;
+              break;
+            case ECardBorderType.EX:
+              cardUi1.m_FirstEditionText.text = customCardObject8.EXEditionText;
+              break;
           }
         }
+        cardUi1.m_MonsterNameText.enabled = customCardObject8.NameEnabled;
+        cardUi1.m_MonsterNameText.fontSize = customCardObject8.NameFontSize;
+        cardUi1.m_MonsterNameText.fontSizeMin = customCardObject8.NameFontSizeMin;
+        cardUi1.m_MonsterNameText.fontSizeMax = customCardObject8.NameFontSizeMax;
+        cardUi1.m_MonsterNameText.color = customCardObject8.NameFontColorRGBA;
+        cardUi1.m_MonsterNameText.rectTransform.anchoredPosition = customCardObject8.NamePosition;
+        if (!isGhost && !flag)
+        {
+          if ((UnityEngine.Object) cardUi1.m_FirstEditionText != (UnityEngine.Object) null && cardUi1.m_FirstEditionText.text != null)
+          {
+            cardUi1.m_FirstEditionText.fontSize = customCardObject8.EditionTextFontSize;
+            cardUi1.m_FirstEditionText.fontSizeMin = customCardObject8.EditionTextFontSizeMin;
+            cardUi1.m_FirstEditionText.fontSizeMax = customCardObject8.EditionTextFontSizeMax;
+            cardUi1.m_FirstEditionText.color = customCardObject8.EditionTextFontColorRGBA;
+            cardUi1.m_FirstEditionText.rectTransform.anchoredPosition = customCardObject8.EditionTextPosition;
+          }
+          cardUi1.m_RarityText.text = cardConfig.Rarity;
+          cardUi1.m_NumberText.enabled = customCardObject8.NumberEnabled;
+          cardUi1.m_NumberText.fontSize = customCardObject8.NumberFontSize;
+          cardUi1.m_NumberText.fontSizeMin = customCardObject8.NumberFontSizeMin;
+          cardUi1.m_NumberText.fontSizeMax = customCardObject8.NumberFontSizeMax;
+          cardUi1.m_NumberText.color = customCardObject8.NumberFontColorRGBA;
+          cardUi1.m_NumberText.rectTransform.anchoredPosition = customCardObject8.NumberPosition;
+          cardUi1.m_FirstEditionText.enabled = customCardObject8.EditionTextEnabled;
+          cardUi1.m_RarityText.enabled = customCardObject8.RarityEnabled;
+          cardUi1.m_RarityText.fontSize = customCardObject8.RarityFontSize;
+          cardUi1.m_RarityText.fontSizeMin = customCardObject8.RarityFontSizeMin;
+          cardUi1.m_RarityText.fontSizeMax = customCardObject8.RarityFontSizeMax;
+          cardUi1.m_RarityText.color = customCardObject8.RarityFontColorRGBA;
+          cardUi1.m_RarityText.rectTransform.anchoredPosition = customCardObject8.RarityPosition;
+        }
+        if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "RarityImage") != (UnityEngine.Object) null)
+          ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "RarityImage").enabled = customCardObject8.RarityImageEnabled;
+        if (!isGhost)
+        {
+          cardUi1.m_ChampionText.enabled = customCardObject8.ChampionTextEnabled;
+          cardUi1.m_ChampionText.fontSize = customCardObject8.ChampionFontSize;
+          cardUi1.m_ChampionText.fontSizeMin = customCardObject8.ChampionFontSizeMin;
+          cardUi1.m_ChampionText.fontSizeMax = customCardObject8.ChampionFontSizeMax;
+          cardUi1.m_ChampionText.color = customCardObject8.ChampionFontColorRGBA;
+          cardUi1.m_ChampionText.rectTransform.anchoredPosition = customCardObject8.ChampionPosition;
+        }
+        if (isGhost && (UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "CardStat") != (UnityEngine.Object) null)
+          ExtrasHandler.GetImageComponentByName(cardUi1.gameObject, "CardStat").enabled = cardConfig.StatBackgroundImageEnabled;
+        cardUi1.m_Stat1Text.text = cardConfig.Stat1;
+        cardUi1.m_Stat1Text.enabled = customCardObject8.Stat1Enabled;
+        cardUi1.m_Stat1Text.fontSize = customCardObject8.Stat1FontSize;
+        cardUi1.m_Stat1Text.fontSizeMin = customCardObject8.Stat1FontSizeMin;
+        cardUi1.m_Stat1Text.fontSizeMax = customCardObject8.Stat1FontSizeMax;
+        cardUi1.m_Stat1Text.color = customCardObject8.Stat1FontColorRGBA;
+        cardUi1.m_Stat1Text.rectTransform.anchoredPosition = customCardObject8.Stat1Position;
+        cardUi1.m_Stat2Text.text = cardConfig.Stat2;
+        cardUi1.m_Stat2Text.enabled = customCardObject8.Stat2Enabled;
+        cardUi1.m_Stat2Text.fontSize = customCardObject8.Stat2FontSize;
+        cardUi1.m_Stat2Text.fontSizeMin = customCardObject8.Stat2FontSizeMin;
+        cardUi1.m_Stat2Text.fontSizeMax = customCardObject8.Stat2FontSizeMax;
+        cardUi1.m_Stat2Text.color = customCardObject8.Stat2FontColorRGBA;
+        cardUi1.m_Stat2Text.rectTransform.anchoredPosition = customCardObject8.Stat2Position;
+        cardUi1.m_Stat3Text.text = cardConfig.Stat3;
+        cardUi1.m_Stat3Text.enabled = customCardObject8.Stat3Enabled;
+        cardUi1.m_Stat3Text.fontSize = customCardObject8.Stat3FontSize;
+        cardUi1.m_Stat3Text.fontSizeMin = customCardObject8.Stat3FontSizeMin;
+        cardUi1.m_Stat3Text.fontSizeMax = customCardObject8.Stat3FontSizeMax;
+        cardUi1.m_Stat3Text.color = customCardObject8.Stat3FontColorRGBA;
+        cardUi1.m_Stat3Text.rectTransform.anchoredPosition = customCardObject8.Stat3Position;
+        cardUi1.m_Stat4Text.text = cardConfig.Stat4;
+        cardUi1.m_Stat4Text.enabled = customCardObject8.Stat4Enabled;
+        cardUi1.m_Stat4Text.fontSize = customCardObject8.Stat4FontSize;
+        cardUi1.m_Stat4Text.fontSizeMin = customCardObject8.Stat4FontSizeMin;
+        cardUi1.m_Stat4Text.fontSizeMax = customCardObject8.Stat4FontSizeMax;
+        cardUi1.m_Stat4Text.color = customCardObject8.Stat4FontColorRGBA;
+        cardUi1.m_Stat4Text.rectTransform.anchoredPosition = customCardObject8.Stat4Position;
+        if ((UnityEngine.Object) cardUi1.m_ArtistText != (UnityEngine.Object) null)
+        {
+          if (flag && (UnityEngine.Object) cardUi1.m_FullArtCard != (UnityEngine.Object) null && (UnityEngine.Object) cardUi1.m_FullArtCard.m_ArtistText != (UnityEngine.Object) null && cardUi1.m_FullArtCard.m_ArtistText.text != null)
+          {
+            cardUi1.m_FullArtCard.m_ArtistText.text = customCardObject8.ArtistText;
+            cardUi1.m_FullArtCard.m_ArtistText.enabled = customCardObject8.ArtistTextEnabled;
+            cardUi1.m_FullArtCard.m_ArtistText.fontSize = customCardObject8.ArtistTextFontSize;
+            cardUi1.m_FullArtCard.m_ArtistText.fontSizeMin = customCardObject8.ArtistTextFontSizeMin;
+            cardUi1.m_FullArtCard.m_ArtistText.fontSizeMax = customCardObject8.ArtistTextFontSizeMax;
+            cardUi1.m_FullArtCard.m_ArtistText.color = customCardObject8.ArtistTextFontColorRGBA;
+            cardUi1.m_FullArtCard.m_ArtistText.rectTransform.anchoredPosition = customCardObject8.ArtistTextPosition;
+          }
+          cardUi1.m_ArtistText.text = customCardObject8.ArtistText;
+          cardUi1.m_ArtistText.enabled = customCardObject8.ArtistTextEnabled;
+          cardUi1.m_ArtistText.fontSize = customCardObject8.ArtistTextFontSize;
+          cardUi1.m_ArtistText.fontSizeMin = customCardObject8.ArtistTextFontSizeMin;
+          cardUi1.m_ArtistText.fontSizeMax = customCardObject8.ArtistTextFontSizeMax;
+          cardUi1.m_ArtistText.color = customCardObject8.ArtistTextFontColorRGBA;
+          cardUi1.m_ArtistText.rectTransform.anchoredPosition = customCardObject8.ArtistTextPosition;
+        }
+        if ((UnityEngine.Object) ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "CompanyText") != (UnityEngine.Object) null)
+        {
+          TextMeshProUGUI textComponentByName = ExtrasHandler.GetTextComponentByName(cardUi1.gameObject, "CompanyText");
+          textComponentByName.text = customCardObject8.CompanyText;
+          textComponentByName.enabled = customCardObject8.CompanyTextEnabled;
+          textComponentByName.fontSize = customCardObject8.CompanyTextFontSize;
+          textComponentByName.fontSizeMin = customCardObject8.CompanyTextFontSizeMin;
+          textComponentByName.fontSizeMax = customCardObject8.CompanyTextFontSizeMax;
+          textComponentByName.color = customCardObject8.CompanyTextFontColorRGBA;
+          textComponentByName.rectTransform.anchoredPosition = customCardObject8.CompanyTextPosition;
+        }
+        if (!isGhost)
+        {
+          bool monsterImageSizeLimit = customCardObject8.RemoveMonsterImageSizeLimit;
+          if (flag)
+          {
+            if (monsterImageSizeLimit)
+              cardUi1.m_MonsterMask.enabled = false;
+            else if (!monsterImageSizeLimit)
+              cardUi1.m_MonsterMask.enabled = true;
+          }
+          else if (!flag)
+          {
+            cardUi1.m_MonsterMask.enabled = true;
+            Image imageComponentByName = ExtrasHandler.GetImageComponentByName(cardUi1.m_MonsterMask.gameObject, "Image");
+            if (monsterImageSizeLimit)
+            {
+              if ((UnityEngine.Object) imageComponentByName != (UnityEngine.Object) null)
+              {
+                imageComponentByName.maskable = false;
+                cardUi1.m_CardFoilMaskImage.sprite = cardUi1.m_CardBackImage.sprite;
+                cardUi1.m_MonsterMaskImage.enabled = false;
+              }
+            }
+            else if (!monsterImageSizeLimit && (UnityEngine.Object) imageComponentByName != (UnityEngine.Object) null)
+            {
+              imageComponentByName.maskable = true;
+              cardUi1.m_MonsterMaskImage.enabled = true;
+            }
+          }
+        }
+        if ((UnityEngine.Object) cardUi1.m_MonsterImage != (UnityEngine.Object) null)
+        {
+          cardUi1.m_MonsterImage.rectTransform.sizeDelta = customCardObject8.MonsterImageSize;
+          cardUi1.m_MonsterImage.rectTransform.anchoredPosition = customCardObject8.MonsterImagePosition;
+        }
+        if (cardData.isFoil)
+        {
+          CardUI cardUi2 = cardUi1;
+          if ((UnityEngine.Object) cardUi2.transform.Find("FoilText") == (UnityEngine.Object) null)
+          {
+            TextMeshProUGUI textMeshProUgui = new GameObject("FoilText").AddComponent<TextMeshProUGUI>();
+            textMeshProUgui.text = customCardObject8.FoilText;
+            textMeshProUgui.transform.SetParent(cardUi2.transform, false);
+            textMeshProUgui.enabled = false;
+            if (!((UnityEngine.Object) textMeshProUgui != (UnityEngine.Object) null) || !((UnityEngine.Object) textMeshProUgui.transform.parent == (UnityEngine.Object) cardUi2.transform))
+              ;
+          }
+          Transform transform = cardUi2.transform.Find("FoilText");
+          if ((UnityEngine.Object) transform != (UnityEngine.Object) null)
+            transform.GetComponent<TextMeshProUGUI>().text = customCardObject8.FoilText;
+        }
+      }
+      else if (isGhost)
+      {
+        cardUi1.m_MonsterImage.rectTransform.sizeDelta = PlayerPatches.defaultGhostMonsterImageSize;
+        cardUi1.m_MonsterImage.rectTransform.anchoredPosition = PlayerPatches.defaultGhostMonsterImagePosition;
+      }
+      else if (flag)
+      {
+        if (cardData.expansionType == ECardExpansionType.Tetramon || cardData.expansionType == ECardExpansionType.Destiny || cardData.expansionType == ECardExpansionType.Megabot)
+        {
+          cardUi1.m_MonsterImage.rectTransform.sizeDelta = PlayerPatches.defaultTetramonMonsterFullArtImageSize;
+          cardUi1.m_MonsterImage.rectTransform.anchoredPosition = PlayerPatches.defaultTetramonMonsterFullArtImagePosition;
+        }
+        else if (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG)
+        {
+          cardUi1.m_MonsterImage.rectTransform.sizeDelta = PlayerPatches.defaultTetramonMonsterFullArtImageSize;
+          cardUi1.m_MonsterImage.rectTransform.anchoredPosition = PlayerPatches.defaultOtherMonsterFullArtImagePosition;
+        }
+      }
+      else
+      {
+        cardUi1.m_MonsterImage.rectTransform.sizeDelta = PlayerPatches.defaultTetramonMonsterImageSize;
+        if (cardData.expansionType == ECardExpansionType.Tetramon || cardData.expansionType == ECardExpansionType.Destiny || cardData.expansionType == ECardExpansionType.Megabot)
+          cardUi1.m_MonsterImage.rectTransform.anchoredPosition = PlayerPatches.defaultTetramonMonsterImagePosition;
+        else if (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG)
+          cardUi1.m_MonsterImage.rectTransform.anchoredPosition = PlayerPatches.defaultOtherMonsterImagePosition;
       }
     }
-    public static void Log(string log) => MinaCardsModPlugin.Log.LogInfo((object)log);
 
-    public static void LogError(string log) => MinaCardsModPlugin.Log.LogError((object)log);
+    public static void Log(string log) => MinaCardsModPlugin.Log.LogInfo((object) log);
+
+    public static void LogError(string log) => MinaCardsModPlugin.Log.LogError((object) log);
   }
 }

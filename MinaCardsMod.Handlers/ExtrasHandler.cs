@@ -14,15 +14,153 @@ namespace MinaCardsMod.Handlers
 {
   internal class ExtrasHandler
   {
+    public static bool hasLoadedSaveOnce;
+
     public static void DoReload()
     {
+      ImageSwapHandler.SetBaseGhostMonsterIcons();
+      ImageSwapHandler.SetBaseMonsterIcons();
+      ImageSwapHandler.SetCatJobMonsterIcons();
+      ImageSwapHandler.SetFantasyRPGMonsterIcons();
+      ImageSwapHandler.SetMegabotMonsterIcons();
+      ExtrasHandler.SetPreviousEvolutions();
+      ExtrasHandler.swapPackNames();
+      ExtrasHandler.SwapNewPackItemImages();
+    }
+
+    public static void DoFirstWorldLoad()
+    {
+      if (!ExtrasHandler.hasLoadedSaveOnce && CSingleton<CGameManager>.Instance.m_IsGameLevel)
+      {
+        if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
+        {
+          MinaCardsModPlugin.CustomBaseMonsterImages.Value = false;
+          ImageSwapHandler.GetOriginalMonsterSprites();
+          ImageSwapHandler.GetOriginalGhostMonsterSprites();
+          MinaCardsModPlugin.CustomBaseMonsterImages.Value = true;
+          ExtrasHandler.hasLoadedSaveOnce = true;
+        }
+        else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
+        {
+          ImageSwapHandler.GetOriginalMonsterSprites();
+          ImageSwapHandler.GetOriginalGhostMonsterSprites();
+          ExtrasHandler.hasLoadedSaveOnce = true;
+        }
+        PlayerPatches.Log("Copying original monster images to cache");
+        ExtrasHandler.DoFirstLoad();
+      }
+      else
+      {
+        if (!ExtrasHandler.hasLoadedSaveOnce || !CSingleton<CGameManager>.Instance.m_IsGameLevel)
+          return;
+        ExtrasHandler.DoReload();
+      }
+    }
+
+    public static void DoFirstLoad()
+    {
+      ImageSwapHandler.CloneOriginalSpriteLists();
+      ImageSwapHandler.CloneOriginalCardBackTexture();
+      ImageSwapHandler.GetOriginalMonsterDatas();
+      ImageSwapHandler.SetBaseGhostMonsterIcons();
       ImageSwapHandler.SetBaseMonsterIcons();
       ImageSwapHandler.SetCatJobMonsterIcons();
       ImageSwapHandler.SetFantasyRPGMonsterIcons();
       ImageSwapHandler.SetMegabotMonsterIcons();
       ExtrasHandler.swapPackNames();
-      ExtrasHandler.SwapNewPackItemImages();
       ExtrasHandler.AddHiddenCards();
+    }
+
+    public static CustomCardObject GetNewMonsterDataFromCacheByName(
+      List<CustomCardObject> customCardList,
+      string monsterType)
+    {
+      foreach (CustomCardObject customCard in customCardList)
+      {
+        if (customCard.Header == monsterType)
+          return customCard;
+      }
+      return (CustomCardObject) null;
+    }
+
+    public static MonsterData GetOldMonsterDataFromCacheByName(
+      List<MonsterData> monsterDataList,
+      string monsterType)
+    {
+      foreach (MonsterData monsterData in monsterDataList)
+      {
+        if (monsterData.MonsterType.ToString() == monsterType)
+          return monsterData;
+      }
+      return (MonsterData) null;
+    }
+
+    public static void SetPreviousEvolutions()
+    {
+      foreach (MonsterData data in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_DataList)
+      {
+        if (MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          CustomCardObject dataFromCacheByName = ExtrasHandler.GetNewMonsterDataFromCacheByName(CacheHandler.tetramonConfigCache, data.MonsterType.ToString());
+          EMonsterType result;
+          if (dataFromCacheByName != null && Enum.TryParse<EMonsterType>(dataFromCacheByName.PreviousEvolution, out result))
+            data.PreviousEvolution = result;
+        }
+        else if (!MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          MonsterData dataFromCacheByName = ExtrasHandler.GetOldMonsterDataFromCacheByName(CacheHandler.originalMonsterDataList, data.MonsterType.ToString());
+          if (dataFromCacheByName != null)
+            data.PreviousEvolution = dataFromCacheByName.PreviousEvolution;
+        }
+      }
+      foreach (MonsterData catJobData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CatJobDataList)
+      {
+        if (MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          CustomCardObject dataFromCacheByName = ExtrasHandler.GetNewMonsterDataFromCacheByName(CacheHandler.catJobConfigCache, catJobData.MonsterType.ToString());
+          EMonsterType result;
+          if (dataFromCacheByName != null && Enum.TryParse<EMonsterType>(dataFromCacheByName.PreviousEvolution, out result))
+            catJobData.PreviousEvolution = result;
+        }
+        else if (!MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          MonsterData dataFromCacheByName = ExtrasHandler.GetOldMonsterDataFromCacheByName(CacheHandler.originalCatJobDataList, catJobData.MonsterType.ToString());
+          if (dataFromCacheByName != null)
+            catJobData.PreviousEvolution = dataFromCacheByName.PreviousEvolution;
+        }
+      }
+      foreach (MonsterData fantasyRpgData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_FantasyRPGDataList)
+      {
+        if (MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          CustomCardObject dataFromCacheByName = ExtrasHandler.GetNewMonsterDataFromCacheByName(CacheHandler.fantasyRPGConfigCache, fantasyRpgData.MonsterType.ToString());
+          EMonsterType result;
+          if (dataFromCacheByName != null && Enum.TryParse<EMonsterType>(dataFromCacheByName.PreviousEvolution, out result))
+            fantasyRpgData.PreviousEvolution = result;
+        }
+        else if (!MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          MonsterData dataFromCacheByName = ExtrasHandler.GetOldMonsterDataFromCacheByName(CacheHandler.originalFantasyRPGDataList, fantasyRpgData.MonsterType.ToString());
+          if (dataFromCacheByName != null)
+            fantasyRpgData.PreviousEvolution = dataFromCacheByName.PreviousEvolution;
+        }
+      }
+      foreach (MonsterData megabotData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_MegabotDataList)
+      {
+        if (MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          CustomCardObject dataFromCacheByName = ExtrasHandler.GetNewMonsterDataFromCacheByName(CacheHandler.megabotConfigCache, megabotData.MonsterType.ToString());
+          EMonsterType result;
+          if (dataFromCacheByName != null && Enum.TryParse<EMonsterType>(dataFromCacheByName.PreviousEvolution, out result))
+            megabotData.PreviousEvolution = result;
+        }
+        else if (!MinaCardsModPlugin.CustomBaseConfigs.Value)
+        {
+          MonsterData dataFromCacheByName = ExtrasHandler.GetOldMonsterDataFromCacheByName(CacheHandler.originalMegabotDataList, megabotData.MonsterType.ToString());
+          if (dataFromCacheByName != null)
+            megabotData.PreviousEvolution = dataFromCacheByName.PreviousEvolution;
+        }
+      }
     }
 
     public static void SetCardExtrasImages(CardUI __instance, CardData cardData)
@@ -208,7 +346,7 @@ namespace MinaCardsMod.Handlers
 
     public static bool isCardConfigDriven(CardData cardData)
     {
-      return MinaCardsModPlugin.CustomBaseConfigs.Value && (cardData.expansionType == ECardExpansionType.Tetramon || cardData.expansionType == ECardExpansionType.Destiny || cardData.expansionType == ECardExpansionType.Ghost) || MinaCardsModPlugin.CustomNewExpansionConfigs.Value && (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG || cardData.expansionType == ECardExpansionType.Megabot);
+      return cardData.expansionType == ECardExpansionType.Tetramon || cardData.expansionType == ECardExpansionType.Destiny || cardData.expansionType == ECardExpansionType.Ghost ? MinaCardsModPlugin.CustomBaseConfigs.Value : (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG || cardData.expansionType == ECardExpansionType.Megabot) && MinaCardsModPlugin.CustomNewExpansionConfigs.Value;
     }
     public static CustomCardObject SelectConfig(
       CustomCardObject cardConfig,
@@ -216,103 +354,105 @@ namespace MinaCardsMod.Handlers
     {
       return cardConfig.IndividualOverrides ? cardConfig : fullExpansionConfig;
     }
+
     public static void SetCardBacks(Card3dUIGroup card3dUIGroup)
     {
-    GameObject cardBackMesh = card3dUIGroup.m_CardBackMesh;
-    CardUI cardUi = card3dUIGroup.m_CardUI;
-    FieldInfo cardDataField = typeof(CardUI).GetField("m_CardData", BindingFlags.NonPublic | BindingFlags.Instance);
-    if (cardDataField == null)
-    {
+      GameObject cardBackMesh = card3dUIGroup.m_CardBackMesh;
+      CardUI cardUi = card3dUIGroup.m_CardUI;
+      FieldInfo cardDataField = typeof(CardUI).GetField("m_CardData", BindingFlags.NonPublic | BindingFlags.Instance);
+      if (cardDataField == null)
+      {
         Debug.LogError("Unable to find 'm_CardData' field.");
         return;
-    }
+      }
 
-    CardData cardData = (CardData)cardDataField.GetValue(cardUi);
-    if (cardData == null)
+      CardData cardData = (CardData)cardDataField.GetValue(cardUi);
+      if (cardData == null)
         return;
 
-    string spriteName = (string)null;
-    bool flag = false;
+      string spriteName = (string)null;
+      bool flag = false;
 
-    if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-    {
+      if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
+      {
         if (cardData.expansionType == ECardExpansionType.Tetramon)
         {
-            spriteName = "T_CardBackMesh";
-            flag = true;
+          spriteName = "T_CardBackMesh";
+          flag = true;
         }
+
         if (cardData.expansionType == ECardExpansionType.Destiny)
         {
-            spriteName = "T_CardBackMeshDestiny";
-            flag = true;
+          spriteName = "T_CardBackMeshDestiny";
+          flag = true;
         }
+
         if (cardData.expansionType == ECardExpansionType.Ghost)
         {
-            spriteName = "T_CardBackMeshGhost";
-            flag = true;
+          spriteName = "T_CardBackMeshGhost";
+          flag = true;
         }
-    }
-    else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value && (cardData.expansionType == ECardExpansionType.Tetramon || cardData.expansionType == ECardExpansionType.Destiny || cardData.expansionType == ECardExpansionType.Megabot))
-    {
+      }
+      else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value &&
+               (cardData.expansionType == ECardExpansionType.Tetramon ||
+                cardData.expansionType == ECardExpansionType.Destiny ||
+                cardData.expansionType == ECardExpansionType.Megabot))
+      {
         spriteName = "T_CardBackMesh";
         flag = false;
-    }
-    if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
-    {
+      }
+      if (MinaCardsModPlugin.CustomNewExpansionImages.Value)
+      {
         if (cardData.expansionType == ECardExpansionType.CatJob)
         {
-            spriteName = "T_CardBackMeshCatJob";
-            flag = true;
+          spriteName = "T_CardBackMeshCatJob";
+          flag = true;
         }
         if (cardData.expansionType == ECardExpansionType.FantasyRPG)
         {
-            spriteName = "T_CardBackMeshFantasyRPG";
-            flag = true;
+          spriteName = "T_CardBackMeshFantasyRPG";
+          flag = true;
         }
         if (cardData.expansionType == ECardExpansionType.Megabot)
         {
-            spriteName = "T_CardBackMeshMegabot";
-            flag = true;
+          spriteName = "T_CardBackMeshMegabot";
+          flag = true;
         }
-    }
-    else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value && (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG || cardData.expansionType == ECardExpansionType.Megabot))
-    {
+      }
+      else if (!MinaCardsModPlugin.CustomNewExpansionImages.Value && (cardData.expansionType == ECardExpansionType.CatJob || cardData.expansionType == ECardExpansionType.FantasyRPG || cardData.expansionType == ECardExpansionType.Megabot))
+      {
         spriteName = "T_CardBackMesh";
         flag = false;
-    }
-
-    if ((UnityEngine.Object)cardBackMesh != (UnityEngine.Object)null)
-    {
+      }
+      if ((UnityEngine.Object)cardBackMesh != (UnityEngine.Object)null)
+      {
         Renderer component = cardBackMesh.GetComponent<Renderer>();
         if ((UnityEngine.Object)component != (UnityEngine.Object)null)
         {
-            Material material = component.material;
-            if ((UnityEngine.Object)material != (UnityEngine.Object)null && (material.name == "MAT_CardBackMesh" || material.name == "MAT_CardBackMesh (Instance)"))
+          Material material = component.material;
+          if ((UnityEngine.Object) material != (UnityEngine.Object) null && (material.name == "MAT_CardBackMesh" || material.name == "MAT_CardBackMesh (Instance)"))
+          {
+            Sprite sprite1 = (Sprite) null;
+            if (flag)
+              sprite1 = CacheHandler.cardExtrasImagesCache.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == spriteName));
+            else if (!flag)
+              sprite1 = CacheHandler.originalCardBackTexture;
+            if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null)
             {
-                Sprite sprite1 = (Sprite)null;
-                if (flag)
-                    sprite1 = CacheHandler.cardExtrasImagesCache.FirstOrDefault<Sprite>((Func<Sprite, bool>)(sprite => sprite.name == spriteName));
-                else if (!flag)
-                    sprite1 = CacheHandler.originalCardBackTexture;
-
-                if ((UnityEngine.Object)sprite1 != (UnityEngine.Object)null)
-                {
-                    Texture texture = (Texture)sprite1.texture;
-                    material.SetTexture("_BaseMap", texture);
-                    material.SetTexture("_EmissionMap", texture);
-                }
+              Texture texture = (Texture) sprite1.texture;
+              material.SetTexture("_BaseMap", texture);
+              material.SetTexture("_EmissionMap", texture);
             }
+          }
         }
+      }
     }
-}
-
 
     public static void AddHiddenCards()
     {
       List<EMonsterType> shownMonsterList = InventoryBase.GetShownMonsterList(ECardExpansionType.Tetramon);
-      if (shownMonsterList == null || shownMonsterList.Count != 110)
+      if (shownMonsterList == null || shownMonsterList.Count != 111)
         return;
-      shownMonsterList.Add(EMonsterType.EarthDino);
       shownMonsterList.Add(EMonsterType.SlimeA);
       shownMonsterList.Add(EMonsterType.SlimeB);
       shownMonsterList.Add(EMonsterType.SlimeC);
@@ -334,5 +474,8 @@ namespace MinaCardsMod.Handlers
         MinaCardsModPlugin.Log.LogInfo((object) string.Format("Property: {0}, Value: {1}", (object) name, obj1));
       }
     }
+    public static void Log(string log) => MinaCardsModPlugin.Log.LogInfo((object) log);
+
+    public static void LogError(string log) => MinaCardsModPlugin.Log.LogError((object) log);
   }
 }

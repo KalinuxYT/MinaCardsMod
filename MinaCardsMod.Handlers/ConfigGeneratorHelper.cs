@@ -167,7 +167,6 @@ namespace MinaCardsMod.Handlers
           streamWriter1.WriteLine("");
         }
         Color color;
-
         FieldInfo monsterDataField = typeof(CardUI).GetField("m_MonsterData", BindingFlags.NonPublic | BindingFlags.Instance);
         if (monsterDataField != null)
         {
@@ -181,20 +180,16 @@ namespace MinaCardsMod.Handlers
 
             if (!isGhost && previousEvolution == EMonsterType.None)
             {
-              if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBasicIcon") !=
-                  (UnityEngine.Object)null)
+              if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBasicIcon") != (UnityEngine.Object) null)
               {
                 StreamWriter streamWriter14 = streamWriter1;
                 flag3 = ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBasicIcon").enabled;
                 string str13 = "Basic Evolution Icon Enabled = " + flag3.ToString();
                 streamWriter14.WriteLine(str13);
               }
-
-              if ((UnityEngine.Object)ExtrasHandler.GetTextComponentByName(cardUi.gameObject, "EvoBasicText") !=
-                  (UnityEngine.Object)null)
+              if ((UnityEngine.Object) ExtrasHandler.GetTextComponentByName(cardUi.gameObject, "EvoBasicText") != (UnityEngine.Object) null)
               {
-                TextMeshProUGUI textComponentByName =
-                  ExtrasHandler.GetTextComponentByName(cardUi.gameObject, "EvoBasicText");
+                TextMeshProUGUI textComponentByName = ExtrasHandler.GetTextComponentByName(cardUi.gameObject, "EvoBasicText");
                 streamWriter1.WriteLine("Basic Evolution Text = " + textComponentByName.text);
                 StreamWriter streamWriter15 = streamWriter1;
                 flag3 = textComponentByName.enabled;
@@ -216,8 +211,7 @@ namespace MinaCardsMod.Handlers
                 color = textComponentByName.color;
                 string str18 = "Basic Evolution Text Font Color RGBA = " + color.ToString();
                 streamWriter19.WriteLine(str18);
-                streamWriter1.WriteLine("Basic Evolution Text Position = " +
-                                        textComponentByName.rectTransform.anchoredPosition.ToString());
+                streamWriter1.WriteLine("Basic Evolution Text Position = " + textComponentByName.rectTransform.anchoredPosition.ToString());
                 streamWriter1.WriteLine("");
               }
             }
@@ -225,9 +219,10 @@ namespace MinaCardsMod.Handlers
             if (!isGhost)
             {
               int previousEvolutionInt = (int)previousEvolution;
-              if (true)
-              {
-                streamWriter1.WriteLine("Previous Evolution = " + previousEvolution.ToString());
+              if (true) 
+              { 
+                if (!flag2)
+                  streamWriter1.WriteLine("Previous Evolution = " + previousEvolution.ToString());
                 StreamWriter streamWriter20 = streamWriter1;
                 flag3 = cardUi.m_EvoPreviousStageIcon.enabled;
                 string str19 = "Previous Evolution Icon Enabled = " + flag3.ToString();
@@ -252,19 +247,16 @@ namespace MinaCardsMod.Handlers
                 color = cardUi.m_EvoPreviousStageNameText.color;
                 string str24 = "Previous Evolution Name Font Color RGBA = " + color.ToString();
                 streamWriter25.WriteLine(str24);
-                streamWriter1.WriteLine("Previous Evolution Name Position = " +
-                                        cardUi.m_EvoPreviousStageNameText.rectTransform.anchoredPosition.ToString());
-              }
-
-              if ((UnityEngine.Object)ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBG") !=
-                  (UnityEngine.Object)null)
+                streamWriter1.WriteLine("Previous Evolution Name Position = " + cardUi.m_EvoPreviousStageNameText.rectTransform.anchoredPosition.ToString()); 
+              } 
+              if ((UnityEngine.Object) ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBG") != (UnityEngine.Object) null) 
               {
                 StreamWriter streamWriter26 = streamWriter1;
                 flag3 = ExtrasHandler.GetImageComponentByName(cardUi.gameObject, "EvoBG").enabled;
                 string str25 = "Previous Evolution Box Enabled = " + flag3.ToString();
                 streamWriter26.WriteLine(str25);
-                streamWriter1.WriteLine("");
-              }
+                streamWriter1.WriteLine(""); 
+              } 
             }
           }
         }
@@ -481,12 +473,12 @@ namespace MinaCardsMod.Handlers
         {
           streamWriter1.WriteLine("Stat3 = " + cardUi.m_Stat3Text.text);
           StreamWriter streamWriter60 = streamWriter1;
-          num = cardUi.m_Stat3Text.fontSize;
-          string str59 = "Stat3 Font Size = " + num.ToString();
+          flag3 = cardUi.m_Stat3Text.enabled;
+          string str59 = "Stat3 Enabled = " + flag3.ToString();
           streamWriter60.WriteLine(str59);
           StreamWriter streamWriter61 = streamWriter1;
-          flag3 = cardUi.m_Stat3Text.enabled;
-          string str60 = "Stat3 Enabled = " + flag3.ToString();
+          num = cardUi.m_Stat3Text.fontSize;
+          string str60 = "Stat3 Font Size = " + num.ToString();
           streamWriter61.WriteLine(str60);
           StreamWriter streamWriter62 = streamWriter1;
           num = cardUi.m_Stat3Text.fontSizeMin;

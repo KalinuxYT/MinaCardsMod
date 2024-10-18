@@ -5,6 +5,6 @@ namespace MinaCardsMod
     {
         public const string PLUGIN_GUID = "com.KalinuxYT.MinaCardsMod";
         public const string PLUGIN_NAME = "MinaCardsMod";
-        public const string PLUGIN_VERSION = "1.2.5";
+        public const string PLUGIN_VERSION = "1.4.1";
     }
 }

@@ -1,12 +1,9 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
-using UnityEngine.UI;
 
 #nullable disable
 namespace MinaCardsMod.Handlers
@@ -36,43 +33,108 @@ namespace MinaCardsMod.Handlers
       }
     }
 
+    public static Material GetMaterialByName(string name)
+    {
+      foreach (Material materialByName in Resources.FindObjectsOfTypeAll<Material>())
+      {
+        if (materialByName?.name == name)
+          return materialByName;
+      }
+      return (Material) null;
+    }
+
     public static void CloneOriginalCardBackTexture()
     {
-      List<Sprite> loadedSpriteList = CSingleton<LoadStreamTexture>.Instance.m_LoadedSpriteList;
-      if (loadedSpriteList == null)
+      Material materialByName = ImageSwapHandler.GetMaterialByName("MAT_CardBackMesh");
+      if (!((UnityEngine.Object) materialByName != (UnityEngine.Object) null))
         return;
-      foreach (Sprite original in loadedSpriteList)
+      Texture2D mainTexture = materialByName.mainTexture as Texture2D;
+      CacheHandler.originalCardBackTexture = Sprite.Create(mainTexture, new Rect(0.0f, 0.0f, (float) mainTexture.width, (float) mainTexture.height), Vector2.zero);
+      CacheHandler.originalCardBackTexture.name = "T_CardBackMesh";
+    }
+
+    public static MonsterData CreateCopy(MonsterData original)
+    {
+      return new MonsterData()
       {
-        if ((UnityEngine.Object) original != (UnityEngine.Object) null && original.name == "T_CardBackMesh")
+        ArtistName = original.ArtistName,
+        BaseStats = original.BaseStats,
+        Description = original.Description,
+        EffectAmount = original.EffectAmount,
+        ElementIndex = original.ElementIndex,
+        GhostIcon = original.GhostIcon,
+        Icon = original.Icon,
+        MonsterType = original.MonsterType,
+        Name = original.Name,
+        NextEvolution = original.NextEvolution,
+        PreviousEvolution = original.PreviousEvolution,
+        Rarity = original.Rarity,
+        Roles = original.Roles,
+        SkillList = original.SkillList
+      };
+    }
+
+    public static void GetOriginalMonsterDatas()
+    {
+      foreach (MonsterData data in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_DataList)
+        CacheHandler.originalMonsterDataList.Add(ImageSwapHandler.CreateCopy(data));
+      foreach (MonsterData catJobData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_CatJobDataList)
+        CacheHandler.originalCatJobDataList.Add(ImageSwapHandler.CreateCopy(catJobData));
+      foreach (MonsterData fantasyRpgData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_FantasyRPGDataList)
+        CacheHandler.originalFantasyRPGDataList.Add(ImageSwapHandler.CreateCopy(fantasyRpgData));
+      foreach (MonsterData megabotData in CSingleton<InventoryBase>.Instance.m_MonsterData_SO.m_MegabotDataList)
+        CacheHandler.originalMegabotDataList.Add(ImageSwapHandler.CreateCopy(megabotData));
+      ImageSwapHandler.Log("Cloned all original monster data");
+    }
+
+    public static void GetOriginalGhostMonsterSprites()
+    {
+      if (CacheHandler.clonedOriginalGhostMonsterImages)
+        return;
+      foreach (EMonsterType shownMonster in InventoryBase.GetShownMonsterList(ECardExpansionType.Ghost))
+      {
+        MonsterData monsterData = InventoryBase.GetMonsterData(shownMonster);
+        if (monsterData != null)
         {
-          CacheHandler.originalCardBackTexture = UnityEngine.Object.Instantiate<Sprite>(original);
-          CacheHandler.originalCardBackTexture.name = "T_CardBackMesh";
+          Sprite ghostIcon = monsterData.GhostIcon;
+          if ((UnityEngine.Object) ghostIcon != (UnityEngine.Object) null)
+          {
+            ghostIcon.name = "Ghost_" + shownMonster.ToString();
+            CacheHandler.originalGhostMonsterImageList.Add(ghostIcon);
+            if (CacheHandler.originalGhostMonsterImageList.Count == 19)
+              CacheHandler.clonedOriginalGhostMonsterImages = true;
+          }
         }
       }
     }
 
     public static void GetOriginalMonsterSprites()
     {
-      if (!CacheHandler.clonedOriginalMonsterImages)
+      if (CacheHandler.clonedOriginalMonsterImages)
+        return;
+      foreach (EMonsterType monsterType in Enum.GetValues(typeof (EMonsterType)))
       {
-        foreach (EMonsterType monsterType in Enum.GetValues(typeof (EMonsterType)))
+        if (monsterType >= EMonsterType.PiggyA)
         {
-          if (monsterType >= EMonsterType.PiggyA)
+          if (monsterType > EMonsterType.FireChickenB)
+            break;
+          if (monsterType >= EMonsterType.PiggyA && monsterType <= EMonsterType.FireChickenB)
           {
-            if (monsterType > EMonsterType.FireChickenB)
-              return;
-            if (monsterType >= EMonsterType.PiggyA && monsterType <= EMonsterType.FireChickenB)
+            MonsterData monsterData = InventoryBase.GetMonsterData(monsterType);
+            if (monsterData != null)
             {
-              MonsterData monsterData = InventoryBase.GetMonsterData(monsterType);
-              if (monsterData != null && (UnityEngine.Object) monsterData.Icon != (UnityEngine.Object) null)
-                CacheHandler.originalTetramonMonsterImageList.Add(monsterData.Icon);
+              Sprite icon = monsterData.Icon;
+              if ((UnityEngine.Object) icon != (UnityEngine.Object) null)
+              {
+                icon.name = monsterType.ToString();
+                CacheHandler.originalTetramonMonsterImageList.Add(icon);
+                if (CacheHandler.originalTetramonMonsterImageList.Count == 121)
+                  CacheHandler.clonedOriginalMonsterImages = true;
+              }
             }
           }
         }
       }
-      if (CacheHandler.originalTetramonMonsterImageList.Count != 121)
-        return;
-      CacheHandler.clonedOriginalMonsterImages = true;
     }
 
     public static void CloneOriginalSpriteLists()
@@ -91,6 +153,7 @@ namespace MinaCardsMod.Handlers
       ImageSwapHandler.CloneSpriteList(cardFrontImageList, ref CacheHandler.originalCardFrontImageList);
       ImageSwapHandler.CloneSpriteList(cardBackImageList, ref CacheHandler.originalCardBackImageList);
       ImageSwapHandler.CloneSpriteList(foilMaskImageList, ref CacheHandler.originalCardFoilMaskImageList);
+      ImageSwapHandler.CloneOriginalCardExtrasSprites();
       CacheHandler.clonedOriginalSpriteLists = true;
     }
 
@@ -147,94 +210,72 @@ namespace MinaCardsMod.Handlers
 
     public static Sprite GetCustomImage(string fileName, string imagePath)
     {
-      Sprite customImage1 = (Sprite) null;
-      
-      var dictField = typeof(LoadStreamTexture).GetField("m_LoadedSpriteDict", BindingFlags.NonPublic | BindingFlags.Instance);
-      var loadedSpriteDict = dictField.GetValue(CSingleton<LoadStreamTexture>.Instance) as Dictionary<string, Sprite>;
-      
-      if (loadedSpriteDict != null && loadedSpriteDict.ContainsKey(fileName))
-      {
-        loadedSpriteDict.TryGetValue(fileName, out customImage1);
-        if (customImage1 != null)
-        {
-          if (CSingleton<LoadStreamTexture>.Instance.m_Image == null)
-          {
-            CSingleton<LoadStreamTexture>.Instance.m_Image = new GameObject("CustomImage").AddComponent<Image>();
-            MinaCardsModPlugin.Log.LogInfo("Image NULL making new one");
-          }
-          CSingleton<LoadStreamTexture>.Instance.m_Image.sprite = customImage1;
-          return customImage1;
-        }
-      }
       Texture2D texture = ImageSwapHandler.LoadCustomPNG(fileName, imagePath);
-      if (texture != null)
-      {
-        Sprite customImage2 = Sprite.Create(texture, new Rect(0.0f, 0.0f, texture.width, texture.height), Vector2.zero);
-        customImage2.name = fileName;
-        if (loadedSpriteDict != null && !loadedSpriteDict.ContainsKey(fileName))
-        {
-          if (CSingleton<LoadStreamTexture>.Instance.m_LoadedSpriteList == null)
-          {
-            MinaCardsModPlugin.Log.LogInfo("m_LoadedSpriteList is NULL making new one");
-            CSingleton<LoadStreamTexture>.Instance.m_LoadedSpriteList = new List<Sprite>();
-          }
-          CSingleton<LoadStreamTexture>.Instance.m_LoadedSpriteList.Add(customImage2);
-          loadedSpriteDict.TryAdd(fileName, customImage2);
-        }
-        else
-        {
-          loadedSpriteDict[fileName] = customImage2;
-        }
-        return customImage2;
-      }
-      if (!CSingleton<LoadStreamTexture>.Instance.m_CurrentLoadingFileNameList.Contains(fileName))
-      {
-        CSingleton<LoadStreamTexture>.Instance.m_CurrentLoadingFileNameList.Add(fileName);
-
-        MethodInfo loadTextureMethod = typeof(LoadStreamTexture).GetMethod("LoadTextureFromWeb", BindingFlags.NonPublic | BindingFlags.Instance);
-        if (loadTextureMethod != null)
-        {
-          CSingleton<LoadStreamTexture>.Instance.StartCoroutine((IEnumerator)loadTextureMethod.Invoke(CSingleton<LoadStreamTexture>.Instance, new object[] { fileName }));
-        }
-      }
-      return null;
+      if (!((UnityEngine.Object) texture != (UnityEngine.Object) null))
+        return (Sprite) null;
+      Sprite customImage = Sprite.Create(texture, new Rect(0.0f, 0.0f, (float) texture.width, (float) texture.height), Vector2.zero);
+      customImage.name = fileName;
+      return customImage;
     }
 
     public static void SetBaseMonsterIcons()
     {
-      foreach (EMonsterType monsterType in Enum.GetValues(typeof (EMonsterType)))
+      foreach (EMonsterType emonsterType in Enum.GetValues(typeof (EMonsterType)))
       {
+        EMonsterType monsterType = emonsterType;
         if (monsterType >= EMonsterType.PiggyA)
         {
           if (monsterType > EMonsterType.FireChickenB)
             break;
           string monsterName = monsterType.ToString();
-          if (monsterName == "EmeraldA")
-            monsterName = "CrystalA";
-          else if (monsterName == "EmeraldB")
-            monsterName = "CrystalB";
-          else if (monsterName == "EmeraldC")
-            monsterName = "CrystalC";
-          else if (monsterName == "MummyMan")
-            monsterName = "Mummy";
+          monsterName = !(monsterName == "EmeraldA") ? (!(monsterName == "EmeraldB") ? (!(monsterName == "EmeraldC") ? (!(monsterName == "MummyMan") ? monsterType.ToString() : "Mummy") : "CrystalC") : "CrystalB") : "CrystalA";
           if (monsterType >= EMonsterType.PiggyA && monsterType <= EMonsterType.FireChickenB)
           {
             MonsterData monsterData = InventoryBase.GetMonsterData(monsterType);
             if (monsterData != null)
             {
               if (MinaCardsModPlugin.CustomBaseMonsterImages.Value)
-																	
               {
                 Sprite sprite1 = CacheHandler.tetramonPackImagesCache.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == monsterName));
                 if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null)
                   monsterData.Icon = sprite1;
               }
-              else if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
+              if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value)
               {
-                Sprite sprite2 = CacheHandler.originalTetramonMonsterImageList.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == monsterName));
+                Sprite sprite2 = CacheHandler.originalTetramonMonsterImageList.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == monsterType.ToString()));
                 if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
                   monsterData.Icon = sprite2;
               }
+            }
+          }
+        }
+      }
+    }
+
+    public static void SetBaseGhostMonsterIcons()
+    {
+      foreach (EMonsterType shownMonster in InventoryBase.GetShownMonsterList(ECardExpansionType.Ghost))
+      {
+        EMonsterType monsterType = shownMonster;
+        MonsterData monsterData = InventoryBase.GetMonsterData(monsterType);
+        if (monsterData != null)
+        {
+          if (MinaCardsModPlugin.CustomBaseMonsterImages.Value && (UnityEngine.Object) monsterData.GhostIcon != (UnityEngine.Object) null)
+          {
+            Sprite sprite1 = CacheHandler.ghostPackImagesCache.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == "Ghost_" + monsterType.ToString()));
+            if ((UnityEngine.Object) sprite1 != (UnityEngine.Object) null)
+            {
+              monsterData.GhostIcon = sprite1;
+              monsterData.GhostIcon.name = "Ghost_" + monsterType.ToString();
+            }
+          }
+          if (!MinaCardsModPlugin.CustomBaseMonsterImages.Value && (UnityEngine.Object) monsterData.GhostIcon != (UnityEngine.Object) null)
+          {
+            Sprite sprite2 = CacheHandler.originalGhostMonsterImageList.FirstOrDefault<Sprite>((Func<Sprite, bool>) (sprite => sprite.name == "Ghost_" + monsterType.ToString()));
+            if ((UnityEngine.Object) sprite2 != (UnityEngine.Object) null)
+            {
+              monsterData.GhostIcon = sprite2;
+              monsterData.GhostIcon.name = "Ghost_" + monsterType.ToString();
             }
           }
         }

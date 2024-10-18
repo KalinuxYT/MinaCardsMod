@@ -9,13 +9,13 @@ using UnityEngine;
 #nullable disable
 namespace MinaCardsMod
 {
-  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.3.1")]
+  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.4.1")]
   public class MinaCardsModPlugin : BaseUnityPlugin
   {
     private const string MyGUID = "com.KalinuxYT.MinaCardsMod";
     private const string PluginName = "MinaCardsMod";
-    private const string VersionString = "1.3.1";
-    public static string SwapExpansionsKey = "Album expansions toggle";
+    private const string VersionString = "1.4.1";
+    public static string SwapExpansionsKey = "Toggle card expansions";
     public static string CustomNewExpansionImagesKey = "Enable custom card images for new expansions";
     public static string CustomNewExpansionConfigsKey = "Enable custom configs for new expansions";
     public static string CustomBaseMonsterImagesKey = "Enable custom card images for original expansions";
@@ -49,9 +49,9 @@ namespace MinaCardsMod
       MinaCardsModPlugin.CustomNewExpansionConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseMonsterImages.SettingChanged += new EventHandler(this.ConfigSettingChanged);
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.3.1-Hardened is loading...");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.1-Hardened is loading...");
       MinaCardsModPlugin.Harmony.PatchAll();
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.3.1-Hardened is loaded.");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.1-Hardened is loaded.");
       this.Logger.LogWarning((object) "This is a 'Hardened' build, this means any update to the game should not cause major issues. This mod is compatible with v0.47.3 of the game.");
       MinaCardsModPlugin.Log = this.Logger;
     }
@@ -66,17 +66,15 @@ namespace MinaCardsMod
           SoundManager.PlayAudio("SFX_PressFindMatch", 0.6f, 1.2f);
         MinaCardsModPlugin.SwapExpansions.Value = !MinaCardsModPlugin.SwapExpansions.Value;
       }
-      if (!MinaCardsModPlugin.ReCacheFiles.Value.IsUp())
+      if (!MinaCardsModPlugin.ReCacheFiles.Value.IsUp() || CacheHandler.isCurrentlyCacheing || MinaCardsModPlugin.isConfigGeneratorBuild)
         return;
-      if (MinaCardsModPlugin.isConfigGeneratorBuild && CSingleton<CGameManager>.Instance.m_IsGameLevel)
-        ExtrasHandler.AddHiddenCards();
-      if (!CacheHandler.isCurrentlyCacheing && !MinaCardsModPlugin.isConfigGeneratorBuild)
+      CacheHandler.isCurrentlyCacheing = true;
+      ExtrasHandler.swapPackNames();
+      CacheHandler.CacheAllFiles();
+      if (CSingleton<CGameManager>.Instance.m_IsGameLevel)
       {
-        CacheHandler.isCurrentlyCacheing = true;
-        ExtrasHandler.swapPackNames();
-        CacheHandler.CacheAllFiles();
-        if (CSingleton<CGameManager>.Instance.m_IsGameLevel)
-          ExtrasHandler.DoReload();
+        ExtrasHandler.AddHiddenCards();
+        ExtrasHandler.DoReload();
       }
     }
 

@@ -30,8 +30,14 @@ namespace MinaCardsMod.Handlers
     public static List<Sprite> originalCardBackImageList = new List<Sprite>();
     public static List<Sprite> originalCardFoilMaskImageList = new List<Sprite>();
     public static List<Sprite> originalTetramonMonsterImageList = new List<Sprite>();
+    public static List<Sprite> originalGhostMonsterImageList = new List<Sprite>();
     public static List<Sprite> originalCardExtrasImagesList = new List<Sprite>();
     public static Sprite originalCardBackTexture;
+    public static List<MonsterData> originalMonsterDataList = new List<MonsterData>();
+    public static List<MonsterData> originalCatJobDataList = new List<MonsterData>();
+    public static List<MonsterData> originalFantasyRPGDataList = new List<MonsterData>();
+    public static List<MonsterData> originalMegabotDataList = new List<MonsterData>();
+    public static bool clonedOriginalGhostMonsterImages = false;
     public static bool clonedOriginalMonsterImages = false;
     public static bool clonedOriginalSpriteLists = false;
     public static bool hasLoadedCache;
@@ -325,87 +331,21 @@ namespace MinaCardsMod.Handlers
       }
     }
 
-public static void CacheAllImages()
-{
-    CacheHandler.Log("Starting to cache images");
-
-    CacheHandler.cardExtrasImagesCache.Clear();
-    CacheHandler.catJobPackImagesCache.Clear();
-    CacheHandler.fantasyRPGPackImagesCache.Clear();
-    CacheHandler.ghostPackImagesCache.Clear();
-    CacheHandler.megabotPackImagesCache.Clear();
-    CacheHandler.tetramonPackImagesCache.Clear();
-
-    try
+    public static void CacheAllImages()
     {
-        CacheHandler.Log("Caching Card Extras Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.cardExtrasImagesFileNameList, CacheHandler.cardExtrasImagesCache, PlayerPatches.cardExtrasImages);
-        CacheHandler.Log("Finished caching Card Extras Images. Count: " + CacheHandler.cardExtrasImagesCache.Count);
+      CacheHandler.cardExtrasImagesCache.Clear();
+      CacheHandler.catJobPackImagesCache.Clear();
+      CacheHandler.fantasyRPGPackImagesCache.Clear();
+      CacheHandler.ghostPackImagesCache.Clear();
+      CacheHandler.megabotPackImagesCache.Clear();
+      CacheHandler.tetramonPackImagesCache.Clear();
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.cardExtrasImagesFileNameList, CacheHandler.cardExtrasImagesCache, PlayerPatches.cardExtrasImages);
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.catJobPackImagesFileNameList, CacheHandler.catJobPackImagesCache, PlayerPatches.catJobPackImages);
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.fantasyRPGPackImagesFileNameList, CacheHandler.fantasyRPGPackImagesCache, PlayerPatches.fantasyPackImages);
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.ghostPackImagesFileNameList, CacheHandler.ghostPackImagesCache, PlayerPatches.ghostPackImages);
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.megabotPackImagesFileNameList, CacheHandler.megabotPackImagesCache, PlayerPatches.megabotPackImages);
+      CacheHandler.CacheImagesFromLists(CacheFileListHandler.tetramonPackImagesFileNameList, CacheHandler.tetramonPackImagesCache, PlayerPatches.tetramonPackImages);
     }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching Card Extras Images: " + ex.ToString());
-    }
-
-    try
-    {
-        CacheHandler.Log("Caching CatJob Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.catJobPackImagesFileNameList, CacheHandler.catJobPackImagesCache, PlayerPatches.catJobPackImages);
-        CacheHandler.Log("Finished caching CatJob Images. Count: " + CacheHandler.catJobPackImagesCache.Count);
-    }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching CatJob Images: " + ex.ToString());
-    }
-
-    try
-    {
-        CacheHandler.Log("Caching Fantasy RPG Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.fantasyRPGPackImagesFileNameList, CacheHandler.fantasyRPGPackImagesCache, PlayerPatches.fantasyPackImages);
-        CacheHandler.Log("Finished caching Fantasy RPG Images. Count: " + CacheHandler.fantasyRPGPackImagesCache.Count);
-    }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching Fantasy RPG Images: " + ex.ToString());
-    }
-
-    try
-    {
-        CacheHandler.Log("Caching Ghost Pack Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.ghostPackImagesFileNameList, CacheHandler.ghostPackImagesCache, PlayerPatches.ghostPackImages);
-        CacheHandler.Log("Finished caching Ghost Pack Images. Count: " + CacheHandler.ghostPackImagesCache.Count);
-    }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching Ghost Pack Images: " + ex.ToString());
-    }
-
-    try
-    {
-        CacheHandler.Log("Caching Megabot Pack Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.megabotPackImagesFileNameList, CacheHandler.megabotPackImagesCache, PlayerPatches.megabotPackImages);
-        CacheHandler.Log("Finished caching Megabot Pack Images. Count: " + CacheHandler.megabotPackImagesCache.Count);
-    }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching Megabot Pack Images: " + ex.ToString());
-    }
-
-    try
-    {
-        CacheHandler.Log("Caching Tetramon Pack Images");
-        CacheHandler.CacheImagesFromLists(CacheFileListHandler.tetramonPackImagesFileNameList, CacheHandler.tetramonPackImagesCache, PlayerPatches.tetramonPackImages);
-        CacheHandler.Log("Finished caching Tetramon Pack Images. Count: " + CacheHandler.tetramonPackImagesCache.Count);
-    }
-    catch (Exception ex)
-    {
-        CacheHandler.LogError("Error caching Tetramon Pack Images: " + ex.ToString());
-    }
-
-    CacheHandler.Log("Completed image caching");
-}
-
-
 
     public static bool VerifyFullImageCaches()
     {
