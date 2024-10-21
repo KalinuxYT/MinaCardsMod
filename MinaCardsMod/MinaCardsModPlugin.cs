@@ -9,12 +9,12 @@ using UnityEngine;
 #nullable disable
 namespace MinaCardsMod
 {
-  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.4.1")]
+  [BepInPlugin("com.KalinuxYT.MinaCardsMod", "MinaCardsMod", "1.4.2")]
   public class MinaCardsModPlugin : BaseUnityPlugin
   {
     private const string MyGUID = "com.KalinuxYT.MinaCardsMod";
     private const string PluginName = "MinaCardsMod";
-    private const string VersionString = "1.4.1";
+    private const string VersionString = "1.4.2";
     public static string SwapExpansionsKey = "Toggle card expansions";
     public static string CustomNewExpansionImagesKey = "Enable custom card images for new expansions";
     public static string CustomNewExpansionConfigsKey = "Enable custom configs for new expansions";
@@ -49,9 +49,9 @@ namespace MinaCardsMod
       MinaCardsModPlugin.CustomNewExpansionConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseConfigs.SettingChanged += new EventHandler(this.ConfigSettingChanged);
       MinaCardsModPlugin.CustomBaseMonsterImages.SettingChanged += new EventHandler(this.ConfigSettingChanged);
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.1-Hardened is loading...");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.2-Hardened is loading...");
       MinaCardsModPlugin.Harmony.PatchAll();
-      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.1-Hardened is loaded.");
+      this.Logger.LogInfo((object) "PluginName: MinaCardsMod, VersionString: 1.4.2-Hardened is loaded.");
       this.Logger.LogWarning((object) "This is a 'Hardened' build, this means any update to the game should not cause major issues. This mod is compatible with v0.47.3 of the game.");
       MinaCardsModPlugin.Log = this.Logger;
     }
