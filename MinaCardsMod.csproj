@@ -44,6 +44,7 @@
         <Compile Include="MinaCardsMod.Handlers\ImageSwapHandler.cs" />
         <Compile Include="MinaCardsMod.Patches\IniFile.cs" />
         <Compile Include="MinaCardsMod.Patches\PlayerPatches.cs" />
+        <Compile Include="MinaCardsMod.Patches\TextPatch.cs" />
         <Compile Include="MinaCardsMod\MinaCardsModPlugin.cs" />
         <Compile Include="MinaCardsMod\MyPluginInfo.cs" />
         <Compile Include="Properties\AssemblyInfo.cs"/>
