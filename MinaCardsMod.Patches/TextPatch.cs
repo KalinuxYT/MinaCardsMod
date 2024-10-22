@@ -131,7 +131,6 @@ namespace MinaCardsMod.Patches
         {
             Application.OpenURL("https://uwumarket.us/collections/cerbervt");
             UnityAnalytic.JoinDiscord();
-            MinaCardsModPlugin.Log.LogInfo("PauseScreenDiscordPatch: Discord button URL modified on the pause screen.");
             return false;
         }
     }
@@ -142,7 +141,6 @@ namespace MinaCardsMod.Patches
         {
             Application.OpenURL("https://uwumarket.us/collections/cerbervt");
             UnityAnalytic.JoinDiscord();
-            MinaCardsModPlugin.Log.LogInfo("TitleScreenDiscordPatch: Discord button URL modified on the title screen.");
             return false;
         }
     }
