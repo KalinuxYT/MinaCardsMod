@@ -164,8 +164,87 @@ namespace MinaCardsMod.Patches
             "YourStandardBo",
             "Aquwuwa",
             "Evilyn",
-            "Neuro",
-            ""
+            "Eliv",
+            "Nwero",
+            "Ember’s#WanFan",
+            "SucculentsCollector",
+            "UndercookedGoose",
+            "Rebrec",
+            "John Twitch",
+            "CerberSocksEnthusiast",
+            "Airis",
+            "Top3Gamer987",
+            "#WanFemaleStreamer",
+            "FilipinoBoy",
+            "IEatAnywhereBetween3000to4000SpidersADay",
+            "DiscordKitten",
+            "Grincher",
+            "Xdx",
+            "SuperMassiveHamburger",
+            "Camimi",
+            "Super Cool Pupper",
+            "BasementDweller(Starving)",
+            "YanderePillow",
+            "Vulgar",
+            "Rick Astley", 
+            "ShakenScientificResolve",
+            "DoorKnobSucker",
+            "John Minamon",
+            "TastyBaton",
+            "SunshineGoddess",
+            "Astarion",
+            "Ermber",
+            "Cerber Socks",
+            "HarpoonConnoisseur",
+            "ColdSockMosquito",
+            "Toemuh",
+            "YesHealsForU",
+            "OmnipresentClipper",
+            "Maxwell",
+            "MagicianWithaVision",
+            "ManOfTheSauna", 
+            "TheSoul",
+            "CarbonCrab",
+            "BagelEnjoyer",
+            "Nogitsune",
+            "Coin",
+            "ParentsRRelated",
+            "SqueakyFridgeBeetle",
+            "CtrlAltVictory", 
+            "Gem_Encrusted_Crustacean",
+            "RememberedWan",
+            "WantedSalad",
+            "OverWanMillionCovers",
+            "MoonDog",
+            "TrustworthyPitFruit" ,
+            "SoaringGato",
+            "CutestSheep",
+            "UnemployedBugBot",
+            "ManLackingSkills",
+            "TaxDevil",
+            "WinningDavid",
+            "RequiredWan",
+            "JohnBot", 
+            "InOrberWeTrust",
+            "ConvexGlobularCycloidEnjoyer",
+            "Shoemimi",
+            "GlorpCat",
+            "IronLungGOTY",
+            "Competitive Minawan Adventure Gamer",
+            "AvidMinamonCollector",
+            "Highwaywan",
+            "Deleted User",
+            "ConspicuousApostrophe",
+            "DefiddledDaveCo.",
+            "YouKilledMyFather",
+            "PregnantWithaHorse",
+            "Byonicle",
+            "CrazyFilteredRobotBody",
+            "OopsAllKaraoke",
+            "ASMR Survivor",
+            "TheShockingErm",
+            "NotaBagel",
+            "RedDogWan"
         };
         private static List<string> shuffledNames;
         static void Postfix(CustomerReviewPanelUI __instance, CustomerReviewData reviewData)
@@ -193,111 +272,155 @@ namespace MinaCardsMod.Patches
             }
         }
     }
-    /*
-    // Does replace the review text but is too broad
     
+    // Replace customer review text
+    /*
     [HarmonyPatch(typeof(CustomerReviewManager), "GetReviewTextString")]
     public class CustomerReviewTextPatch
     {
-        static void Postfix()
+        private static readonly Dictionary<ECustomerReviewType, Dictionary<int, List<string>>> reviewVariations =
+            new Dictionary<ECustomerReviewType, Dictionary<int, List<string>>>
         {
-            var reviewTables = CSingleton<CustomerReviewManager>.Instance.m_TextSO.m_CustomerReviewTextDataTableList;
-            foreach (var reviewTable in reviewTables)
+            // StoreGeneric
             {
-                for (int i = 0; i < reviewTable.bad_TextList.Count; i++)
+                ECustomerReviewType.StoreGeneric, new Dictionary<int, List<string>>
                 {
-                    reviewTable.bad_TextList[i] = "Modified Bad Review Text";
+                    { 0, new List<string> { "StoreGeneric1, XXX, YYY, Bad", "StoreGeneric2, XXX, YYY, Bad", "StoreGeneric3, XXX, YYY, Bad", "StoreGeneric4, XXX, YYY, Bad", "StoreGeneric5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "StoreGeneric1, XXX, YYY, Normal", "StoreGeneric2, XXX, YYY, Normal", "StoreGeneric3, XXX, YYY, Normal", "StoreGeneric4, XXX, YYY, Normal", "StoreGeneric5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "StoreGeneric1, XXX, YYY, Good", "StoreGeneric2, XXX, YYY, Good", "StoreGeneric3, XXX, YYY, Good", "StoreGeneric4, XXX, YYY, Good", "StoreGeneric5, XXX, YYY, Good" } }
                 }
-                for (int i = 0; i < reviewTable.normal_TextList.Count; i++)
+            },
+            // ItemVariety
+            {
+                ECustomerReviewType.ItemVariety, new Dictionary<int, List<string>>
                 {
-                    reviewTable.normal_TextList[i] = "Modified Normal Review Text";
+                    { 0, new List<string> { "ItemVariety1, XXX, YYY, Bad", "ItemVariety2, XXX, YYY, Bad", "ItemVariety3, XXX, YYY, Bad", "ItemVariety4, XXX, YYY, Bad", "ItemVariety5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "ItemVariety1, XXX, YYY, Normal", "ItemVariety2, XXX, YYY, Normal", "ItemVariety3, XXX, YYY, Normal", "ItemVariety4, XXX, YYY, Normal", "ItemVariety5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "ItemVariety1, XXX, YYY, Good", "ItemVariety2, XXX, YYY, Good", "ItemVariety3, XXX, YYY, Good", "ItemVariety4, XXX, YYY, Good", "ItemVariety5, XXX, YYY, Good" } }
                 }
-                for (int i = 0; i < reviewTable.good_TextList.Count; i++)
+            },
+            // ItemPrice
+            {
+                ECustomerReviewType.ItemPrice, new Dictionary<int, List<string>>
                 {
-                    reviewTable.good_TextList[i] = "Modified Good Review Text";
+                    { 0, new List<string> { "ItemPrice1, XXX, YYY, Bad", "ItemPrice2, XXX, YYY, Bad", "ItemPrice3, XXX, YYY, Bad", "ItemPrice4, XXX, YYY, Bad", "ItemPrice5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "ItemPrice1, XXX, YYY, Normal", "ItemPrice2, XXX, YYY, Normal", "ItemPrice3, XXX, YYY, Normal", "ItemPrice4, XXX, YYY, Normal", "ItemPrice5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "ItemPrice1, XXX, YYY, Good", "ItemPrice2, XXX, YYY, Good", "ItemPrice3, XXX, YYY, Good", "ItemPrice4, XXX, YYY, Good", "ItemPrice5, XXX, YYY, Good" } }
+                }
+            },
+            // CardPrice
+            {
+                ECustomerReviewType.CardPrice, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "CardPrice1, XXX, YYY, Bad", "CardPrice2, XXX, YYY, Bad", "CardPrice3, XXX, YYY, Bad", "CardPrice4, XXX, YYY, Bad", "CardPrice5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "CardPrice1, XXX, YYY, Normal", "CardPrice2, XXX, YYY, Normal", "CardPrice3, XXX, YYY, Normal", "CardPrice4, XXX, YYY, Normal", "CardPrice5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "CardPrice1, XXX, YYY, Good", "CardPrice2, XXX, YYY, Good", "CardPrice3, XXX, YYY, Good", "CardPrice4, XXX, YYY, Good", "CardPrice5, XXX, YYY, Good" } }
+                }
+            },
+            // CardRarity
+            {
+                ECustomerReviewType.CardRarity, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "CardRarity1, XXX, YYY, Bad", "CardRarity2, XXX, YYY, Bad", "CardRarity3, XXX, YYY, Bad", "CardRarity4, XXX, YYY, Bad", "CardRarity5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "CardRarity1, XXX, YYY, Normal", "CardRarity2, XXX, YYY, Normal", "CardRarity3, XXX, YYY, Normal", "CardRarity4, XXX, YYY, Normal", "CardRarity5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "CardRarity1, XXX, YYY, Good", "CardRarity2, XXX, YYY, Good", "CardRarity3, XXX, YYY, Good", "CardRarity4, XXX, YYY, Good", "CardRarity5, XXX, YYY, Good" } }
+                }
+            },
+            // PlayablePrice
+            {
+                ECustomerReviewType.PlaytablePrice, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "PlaytablePrice1, XXX, YYY, Bad", "PlaytablePrice2, XXX, YYY, Bad", "PlaytablePrice3, XXX, YYY, Bad", "PlaytablePrice4, XXX, YYY, Bad", "PlaytablePrice5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "PlaytablePrice1, XXX, YYY, Normal", "PlaytablePrice2, XXX, YYY, Normal", "PlaytablePrice3, XXX, YYY, Normal", "PlaytablePrice4, XXX, YYY, Normal", "PlaytablePrice5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "PlaytablePrice1, XXX, YYY, Good", "PlaytablePrice2, XXX, YYY, Good", "PlaytablePrice3, XXX, YYY, Good", "PlaytablePrice4, XXX, YYY, Good", "PlaytablePrice5, XXX, YYY, Good" } }
+                }
+            },
+            // SmellyCustomer
+            {
+                ECustomerReviewType.SmellyCustomer, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "SmellyCustomer1, XXX, YYY, Bad", "SmellyCustomer2, XXX, YYY, Bad", "SmellyCustomer3, XXX, YYY, Bad", "SmellyCustomer4, XXX, YYY, Bad", "SmellyCustomer5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "SmellyCustomer1, XXX, YYY, Normal", "SmellyCustomer2, XXX, YYY, Normal", "SmellyCustomer3, XXX, YYY, Normal", "SmellyCustomer4, XXX, YYY, Normal", "SmellyCustomer5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "SmellyCustomer1, XXX, YYY, Good", "SmellyCustomer2, XXX, YYY, Good", "SmellyCustomer3, XXX, YYY, Good", "SmellyCustomer4, XXX, YYY, Good", "SmellyCustomer5, XXX, YYY, Good" } }
+                }
+            },
+            // BlockedStore
+            {
+                ECustomerReviewType.BlockedStore, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "BlockedStore1, XXX, YYY, Bad", "BlockedStore2, XXX, YYY, Bad", "BlockedStore3, XXX, YYY, Bad", "BlockedStore4, XXX, YYY, Bad", "BlockedStore5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "BlockedStore1, XXX, YYY, Normal", "BlockedStore2, XXX, YYY, Normal", "BlockedStore3, XXX, YYY, Normal", "BlockedStore4, XXX, YYY, Normal", "BlockedStore5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "BlockedStore1, XXX, YYY, Good", "BlockedStore2, XXX, YYY, Good", "BlockedStore3, XXX, YYY, Good", "BlockedStore4, XXX, YYY, Good", "BlockedStore5, XXX, YYY, Good" } }
+                }
+            },
+            // OwnerOpenPack
+            {
+                ECustomerReviewType.OwnerOpenPack, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "OwnerOpenPack1, XXX, YYY, Bad", "OwnerOpenPack2, XXX, YYY, Bad", "OwnerOpenPack3, XXX, YYY, Bad", "OwnerOpenPack4, XXX, YYY, Bad", "OwnerOpenPack5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "OwnerOpenPack1, XXX, YYY, Normal", "OwnerOpenPack2, XXX, YYY, Normal", "OwnerOpenPack3, XXX, YYY, Normal", "OwnerOpenPack4, XXX, YYY, Normal", "OwnerOpenPack5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "OwnerOpenPack1, XXX, YYY, Good", "OwnerOpenPack2, XXX, YYY, Good", "OwnerOpenPack3, XXX, YYY, Good", "OwnerOpenPack4, XXX, YYY, Good", "OwnerOpenPack5, XXX, YYY, Good" } }
+                }
+            },
+            // GiveManyChangePennies
+            {
+                ECustomerReviewType.GiveManyChangePennies, new Dictionary<int, List<string>>
+                {
+                    { 0, new List<string> { "GiveManyChangePennies1, XXX, YYY, Bad", "GiveManyChangePennies2, XXX, YYY, Bad", "GiveManyChangePennies3, XXX, YYY, Bad", "GiveManyChangePennies4, XXX, YYY, Bad", "GiveManyChangePennies5, XXX, YYY, Bad" } },
+                    { 1, new List<string> { "GiveManyChangePennies1, XXX, YYY, Normal", "GiveManyChangePennies2, XXX, YYY, Normal", "GiveManyChangePennies3, XXX, YYY, Normal", "GiveManyChangePennies4, XXX, YYY, Normal", "GiveManyChangePennies5, XXX, YYY, Normal" } },
+                    { 2, new List<string> { "GiveManyChangePennies1, XXX, YYY, Good", "GiveManyChangePennies2, XXX, YYY, Good", "GiveManyChangePennies3, XXX, YYY, Good", "GiveManyChangePennies4, XXX, YYY, Good", "GiveManyChangePennies5, XXX, YYY, Good" } }
+                }
+            }
+        };
+
+        static void Postfix(ref string __result, CustomerReviewData reviewData)
+        {
+            if (reviewVariations.TryGetValue(reviewData.customerReviewType, out var levelDictionary))
+            {
+                if (levelDictionary.TryGetValue(reviewData.textSOGoodBadLevel, out var options))
+                {
+                    string selectedReview = options[Random.Range(0, options.Count)];
+                    selectedReview = selectedReview.Replace("XXX", CPlayerData.PlayerName).Replace("YYY", InventoryBase.GetItemData(reviewData.itemType).GetName());
+                    __result = selectedReview;
                 }
             }
         }
-    } */
+    }*/
     
-    [HarmonyPatch(typeof(CustomerReviewManager), "GetReviewTextString")]
-public class CustomerReviewTextPatch
-{
-    static void Postfix(ref string __result, CustomerReviewData reviewData)
+    
+    /*
+    [HarmonyPatch(typeof(RestockManager))]
+    public class RestockManagerPatch
     {
-        // Define custom texts based on the review type
-        var customBadTexts = new Dictionary<ECustomerReviewType, string>
+        // Patching OnGameDataFinishLoaded to modify the RestockData after the game data is loaded
+        [HarmonyPatch("OnGameDataFinishLoaded")]
+        [HarmonyPostfix]
+        public static void Postfix()
         {
-            { ECustomerReviewType.StoreGeneric, "Bad, XXX, YYY, StoreGeneric" },
-            { ECustomerReviewType.ItemVariety, "Bad, XXX, YYY, ItemVariety" },
-            { ECustomerReviewType.ItemPrice, "Bad, XXX, YYY, ItemPrice" },
-            { ECustomerReviewType.CardPrice, "Bad, XXX, YYY, CardPrice" },
-            { ECustomerReviewType.CardRarity, "Bad, XXX, YYY, CardRarity" },
-            { ECustomerReviewType.PlaytablePrice, "Bad, XXX, YYY, PlaytablePrice" },
-            { ECustomerReviewType.SmellyCustomer, "Bad, XXX, YYY, SmellyCustomer" },
-            { ECustomerReviewType.BlockedStore, "Bad, XXX, YYY, BlockedStore" },
-            { ECustomerReviewType.OwnerOpenPack, "Bad, XXX, YYY, OwnerOpenPack" },
-            { ECustomerReviewType.GiveManyChangePennies, "Bad, XXX, YYY, GiveManyChangePennies" }
-        };
+            var stockData = CSingleton<InventoryBase>.Instance.m_StockItemData_SO;
 
-        var customNormalTexts = new Dictionary<ECustomerReviewType, string>
-        {
-            { ECustomerReviewType.StoreGeneric, "Normal, XXX, YYY, StoreGeneric" },
-            { ECustomerReviewType.ItemVariety, "Normal, XXX, YYY, ItemVariety" },
-            { ECustomerReviewType.ItemPrice, "Normal, XXX, YYY, ItemPrice" },
-            { ECustomerReviewType.CardPrice, "Normal, XXX, YYY, CardPrice" },
-            { ECustomerReviewType.CardRarity, "Normal, XXX, YYY, CardRarity" },
-            { ECustomerReviewType.PlaytablePrice, "Normal, XXX, YYY, PlaytablePrice" },
-            { ECustomerReviewType.SmellyCustomer, "Normal, XXX, YYY, SmellyCustomer" }
-        };
+            if (stockData == null)
+            {
+                MinaCardsModPlugin.Log.LogWarning("RestockManagerPatch: StockItemData_ScriptableObject instance not found.");
+                return;
+            }
 
-        var customGoodTexts = new Dictionary<ECustomerReviewType, string>
-        {
-            { ECustomerReviewType.StoreGeneric, "Good, XXX, YYY, StoreGeneric" },
-            { ECustomerReviewType.ItemVariety, "Good, XXX, YYY, ItemVariety" },
-            { ECustomerReviewType.ItemPrice, "Good, XXX, YYY, ItemPrice" },
-            { ECustomerReviewType.CardPrice, "Good, XXX, YYY, CardPrice" },
-            { ECustomerReviewType.CardRarity, "Good, XXX, YYY, CardRarity" },
-            { ECustomerReviewType.PlaytablePrice, "Good, XXX, YYY, PlaytablePrice" },
-            { ECustomerReviewType.SmellyCustomer, "Good, XXX, YYY, SmellyCustomer" }
-        };
+            // Iterate through each RestockData in m_RestockDataList and modify fields
+            foreach (var restockData in stockData.m_RestockDataList)
+            {
+                // Log original values
+                MinaCardsModPlugin.Log.LogInfo($"Original RestockData: Name = {restockData.name}, License Level Required = {restockData.licenseShopLevelRequired}, License Price = {restockData.licensePrice}");
 
-        // Retrieve the custom text based on review type and level
-        string customText = GetCustomText(reviewData, customBadTexts, customNormalTexts, customGoodTexts);
-        if (!string.IsNullOrEmpty(customText))
-        {
-            // Replace placeholders while keeping them intact
-            customText = customText.Replace("XXX", CPlayerData.PlayerName).Replace("YYY", InventoryBase.GetItemData(reviewData.itemType).GetName());
+                // Modify the values
+                restockData.licenseShopLevelRequired = Mathf.CeilToInt(restockData.licenseShopLevelRequired * .3f);
+                restockData.licensePrice *= 0.25f;
 
-            // Set the modified result
-            __result = customText;
+                // Log modified values
+                MinaCardsModPlugin.Log.LogInfo($"Modified RestockData: Name = {restockData.name}, License Level Required = {restockData.licenseShopLevelRequired}, License Price = {restockData.licensePrice}");
+            }
         }
     }
-
-    private static string GetCustomText(CustomerReviewData reviewData, 
-                                        Dictionary<ECustomerReviewType, string> badTexts,
-                                        Dictionary<ECustomerReviewType, string> normalTexts,
-                                        Dictionary<ECustomerReviewType, string> goodTexts)
-    {
-        switch (reviewData.textSOGoodBadLevel)
-        {
-            case 0:
-                if (badTexts.TryGetValue(reviewData.customerReviewType, out string badText))
-                    return badText;
-                break;
-            case 1:
-                if (normalTexts.TryGetValue(reviewData.customerReviewType, out string normalText))
-                    return normalText;
-                break;
-            case 2:
-                if (goodTexts.TryGetValue(reviewData.customerReviewType, out string goodText))
-                    return goodText;
-                break;
-        }
-        return null; // If no custom text is found, return null
-    }
-}
-    
+   */
 /*
     // The below code is to investigate the class and/or methods used to set/modify text
     [HarmonyPatch(typeof(TextMeshProUGUI), "Awake")]
