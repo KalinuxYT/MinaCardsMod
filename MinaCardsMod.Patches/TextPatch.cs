@@ -148,43 +148,49 @@ namespace MinaCardsMod.Patches
         }
     }
     
+    // Replace customer review names
+    
     [HarmonyPatch(typeof(CustomerReviewPanelUI), "Init")]
     public class CustomerReviewPanelUIPatch
     {
-        // List of custom names to use
-        private static readonly List<string> customNames = new List<string>
+        private static List<string> customNames = new List<string>
         {
-            "Alex", "Jordan", "Taylor", "Casey", "Morgan",
-            "Jamie", "Riley", "Drew", "Logan", "Cameron"
+            "Dave Daveson",
+            "Trailerless Trucker",
+            "TooMuchPasta",
+            "SlugSalter",
+            "Peanut",
+            "Jim Purrbert",
+            "YourStandardBo",
+            "Aquwuwa",
+            "Evilyn",
+            "Neuro",
+            ""
         };
-
+        private static List<string> shuffledNames;
         static void Postfix(CustomerReviewPanelUI __instance, CustomerReviewData reviewData)
         {
-            // Check if m_NameText is not null
-            if (__instance.m_NameText != null)
+            if (shuffledNames == null || shuffledNames.Count == 0)
             {
-                // Get a random name from the custom names list
-                string customName = GetCustomName();
-                __instance.m_NameText.text = customName;
-                Debug.Log($"CustomerReviewPanelUIPatch: Replaced customer name with '{customName}'.");
+                ShuffleCustomNames();
             }
-            else
-            {
-                Debug.LogWarning("CustomerReviewPanelUIPatch: m_NameText is null, cannot replace customer name.");
-            }
+            string randomName = shuffledNames[0];
+            shuffledNames.RemoveAt(0);
+            __instance.m_NameText.text = randomName;
         }
-
-        // Method to get a random custom name from the list
-        private static string GetCustomName()
+        private static void ShuffleCustomNames()
         {
-            if (customNames.Count == 0)
+            shuffledNames = new List<string>(customNames);
+            int n = shuffledNames.Count;
+            System.Random rng = new System.Random();
+            while (n > 1)
             {
-                Debug.LogWarning("CustomerReviewPanelUIPatch: No custom names defined in the list.");
-                return "DefaultName";
+                n--;
+                int k = rng.Next(n + 1);
+                string value = shuffledNames[k];
+                shuffledNames[k] = shuffledNames[n];
+                shuffledNames[n] = value;
             }
-            // Return a random name from the list for each name found
-            int index = Random.Range(0, customNames.Count);
-            return customNames[index];
         }
     }
     
