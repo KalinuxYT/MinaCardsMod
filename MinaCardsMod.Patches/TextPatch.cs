@@ -193,6 +193,110 @@ namespace MinaCardsMod.Patches
             }
         }
     }
+    /*
+    // Does replace the review text but is too broad
+    
+    [HarmonyPatch(typeof(CustomerReviewManager), "GetReviewTextString")]
+    public class CustomerReviewTextPatch
+    {
+        static void Postfix()
+        {
+            var reviewTables = CSingleton<CustomerReviewManager>.Instance.m_TextSO.m_CustomerReviewTextDataTableList;
+            foreach (var reviewTable in reviewTables)
+            {
+                for (int i = 0; i < reviewTable.bad_TextList.Count; i++)
+                {
+                    reviewTable.bad_TextList[i] = "Modified Bad Review Text";
+                }
+                for (int i = 0; i < reviewTable.normal_TextList.Count; i++)
+                {
+                    reviewTable.normal_TextList[i] = "Modified Normal Review Text";
+                }
+                for (int i = 0; i < reviewTable.good_TextList.Count; i++)
+                {
+                    reviewTable.good_TextList[i] = "Modified Good Review Text";
+                }
+            }
+        }
+    } */
+    
+    [HarmonyPatch(typeof(CustomerReviewManager), "GetReviewTextString")]
+public class CustomerReviewTextPatch
+{
+    static void Postfix(ref string __result, CustomerReviewData reviewData)
+    {
+        // Define custom texts based on the review type
+        var customBadTexts = new Dictionary<ECustomerReviewType, string>
+        {
+            { ECustomerReviewType.StoreGeneric, "Bad, XXX, YYY, StoreGeneric" },
+            { ECustomerReviewType.ItemVariety, "Bad, XXX, YYY, ItemVariety" },
+            { ECustomerReviewType.ItemPrice, "Bad, XXX, YYY, ItemPrice" },
+            { ECustomerReviewType.CardPrice, "Bad, XXX, YYY, CardPrice" },
+            { ECustomerReviewType.CardRarity, "Bad, XXX, YYY, CardRarity" },
+            { ECustomerReviewType.PlaytablePrice, "Bad, XXX, YYY, PlaytablePrice" },
+            { ECustomerReviewType.SmellyCustomer, "Bad, XXX, YYY, SmellyCustomer" },
+            { ECustomerReviewType.BlockedStore, "Bad, XXX, YYY, BlockedStore" },
+            { ECustomerReviewType.OwnerOpenPack, "Bad, XXX, YYY, OwnerOpenPack" },
+            { ECustomerReviewType.GiveManyChangePennies, "Bad, XXX, YYY, GiveManyChangePennies" }
+        };
+
+        var customNormalTexts = new Dictionary<ECustomerReviewType, string>
+        {
+            { ECustomerReviewType.StoreGeneric, "Normal, XXX, YYY, StoreGeneric" },
+            { ECustomerReviewType.ItemVariety, "Normal, XXX, YYY, ItemVariety" },
+            { ECustomerReviewType.ItemPrice, "Normal, XXX, YYY, ItemPrice" },
+            { ECustomerReviewType.CardPrice, "Normal, XXX, YYY, CardPrice" },
+            { ECustomerReviewType.CardRarity, "Normal, XXX, YYY, CardRarity" },
+            { ECustomerReviewType.PlaytablePrice, "Normal, XXX, YYY, PlaytablePrice" },
+            { ECustomerReviewType.SmellyCustomer, "Normal, XXX, YYY, SmellyCustomer" }
+        };
+
+        var customGoodTexts = new Dictionary<ECustomerReviewType, string>
+        {
+            { ECustomerReviewType.StoreGeneric, "Good, XXX, YYY, StoreGeneric" },
+            { ECustomerReviewType.ItemVariety, "Good, XXX, YYY, ItemVariety" },
+            { ECustomerReviewType.ItemPrice, "Good, XXX, YYY, ItemPrice" },
+            { ECustomerReviewType.CardPrice, "Good, XXX, YYY, CardPrice" },
+            { ECustomerReviewType.CardRarity, "Good, XXX, YYY, CardRarity" },
+            { ECustomerReviewType.PlaytablePrice, "Good, XXX, YYY, PlaytablePrice" },
+            { ECustomerReviewType.SmellyCustomer, "Good, XXX, YYY, SmellyCustomer" }
+        };
+
+        // Retrieve the custom text based on review type and level
+        string customText = GetCustomText(reviewData, customBadTexts, customNormalTexts, customGoodTexts);
+        if (!string.IsNullOrEmpty(customText))
+        {
+            // Replace placeholders while keeping them intact
+            customText = customText.Replace("XXX", CPlayerData.PlayerName).Replace("YYY", InventoryBase.GetItemData(reviewData.itemType).GetName());
+
+            // Set the modified result
+            __result = customText;
+        }
+    }
+
+    private static string GetCustomText(CustomerReviewData reviewData, 
+                                        Dictionary<ECustomerReviewType, string> badTexts,
+                                        Dictionary<ECustomerReviewType, string> normalTexts,
+                                        Dictionary<ECustomerReviewType, string> goodTexts)
+    {
+        switch (reviewData.textSOGoodBadLevel)
+        {
+            case 0:
+                if (badTexts.TryGetValue(reviewData.customerReviewType, out string badText))
+                    return badText;
+                break;
+            case 1:
+                if (normalTexts.TryGetValue(reviewData.customerReviewType, out string normalText))
+                    return normalText;
+                break;
+            case 2:
+                if (goodTexts.TryGetValue(reviewData.customerReviewType, out string goodText))
+                    return goodText;
+                break;
+        }
+        return null; // If no custom text is found, return null
+    }
+}
     
 /*
     // The below code is to investigate the class and/or methods used to set/modify text

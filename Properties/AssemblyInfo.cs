@@ -10,6 +10,6 @@ using System.Security.Permissions;
 [assembly: Debuggable(DebuggableAttribute.DebuggingModes.Default | DebuggableAttribute.DebuggingModes.DisableOptimizations | DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints | DebuggableAttribute.DebuggingModes.EnableEditAndContinue)]
 [assembly: AssemblyCompany("MinaCardsMod")]
 [assembly: AssemblyConfiguration("Debug")]
-[assembly: AssemblyFileVersion("1.4.3.282")]
+[assembly: AssemblyFileVersion("1.4.3.289")]
 [assembly: AssemblyProduct("MinaCardsMod")]
 [assembly: AssemblyTitle("MinaCardsMod")]
