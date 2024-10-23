@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection.Emit;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
@@ -144,6 +147,47 @@ namespace MinaCardsMod.Patches
             return false;
         }
     }
+    
+    [HarmonyPatch(typeof(CustomerReviewPanelUI), "Init")]
+    public class CustomerReviewPanelUIPatch
+    {
+        // List of custom names to use
+        private static readonly List<string> customNames = new List<string>
+        {
+            "Alex", "Jordan", "Taylor", "Casey", "Morgan",
+            "Jamie", "Riley", "Drew", "Logan", "Cameron"
+        };
+
+        static void Postfix(CustomerReviewPanelUI __instance, CustomerReviewData reviewData)
+        {
+            // Check if m_NameText is not null
+            if (__instance.m_NameText != null)
+            {
+                // Get a random name from the custom names list
+                string customName = GetCustomName();
+                __instance.m_NameText.text = customName;
+                Debug.Log($"CustomerReviewPanelUIPatch: Replaced customer name with '{customName}'.");
+            }
+            else
+            {
+                Debug.LogWarning("CustomerReviewPanelUIPatch: m_NameText is null, cannot replace customer name.");
+            }
+        }
+
+        // Method to get a random custom name from the list
+        private static string GetCustomName()
+        {
+            if (customNames.Count == 0)
+            {
+                Debug.LogWarning("CustomerReviewPanelUIPatch: No custom names defined in the list.");
+                return "DefaultName";
+            }
+            // Return a random name from the list for each name found
+            int index = Random.Range(0, customNames.Count);
+            return customNames[index];
+        }
+    }
+    
 /*
     // The below code is to investigate the class and/or methods used to set/modify text
     [HarmonyPatch(typeof(TextMeshProUGUI), "Awake")]
