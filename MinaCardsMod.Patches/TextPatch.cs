@@ -8,7 +8,6 @@ using UnityEngine;
 namespace MinaCardsMod.Patches
 {
     // Phone Service
-    
     [HarmonyPatch(typeof(PhoneManager), "EnterPhoneMode")]
     public class ChangeProviderTextPatch
     {
@@ -18,12 +17,136 @@ namespace MinaCardsMod.Patches
             {
                 textComponent.text = "WanWan-Mobile";
             }
-            else
             {
                 MinaCardsModPlugin.Log.LogWarning("ChangeProviderTextPatch: Could not find 'MobileProviderText' or its TextMeshProUGUI component.");
             }
         }
     }
+    
+    // Difficulty modification
+    // If there is a bug in this code I will kill myself :ohCry:
+    
+    public static class RestockState
+{
+    public static bool IsModified = false;
+    public static Dictionary<string, float> OriginalLicensePrices = new Dictionary<string, float>();
+    public static Dictionary<string, int> OriginalLicenseLevels = new Dictionary<string, int>();
+    public static Dictionary<string, float> OriginalItemCosts = new Dictionary<string, float>();
+}
+
+[HarmonyPatch(typeof(PhoneManager), "EnterPhoneMode")]
+public class DifficultyModifier
+{
+    static void Postfix()
+    {
+        if (!RestockState.IsModified)
+        {
+            ModifyRestockData();
+            RestockState.IsModified = true;
+        }
+    }
+
+    private static void ModifyRestockData()
+    {
+        var stockData = CSingleton<InventoryBase>.Instance.m_StockItemData_SO;
+        if (stockData == null)
+        {
+            MinaCardsModPlugin.Log.LogWarning("ModifyRestockData: StockItemData_ScriptableObject instance not found.");
+            return;
+        }
+        float licenseCostReduction = Mathf.Clamp(MinaCardsModPlugin.LicenseCostReductionPercentage.Value / 100f, 0f, 1f);
+        float levelRequirementReduction = Mathf.Clamp(MinaCardsModPlugin.LevelRequirementReductionPercentage.Value / 100f, 0f, 1f);
+        float itemCostReduction = Mathf.Clamp(MinaCardsModPlugin.ItemCostReductionPercentage.Value / 100f, 0f, 1f);
+        foreach (var restockData in stockData.m_RestockDataList)
+        {
+            string uniqueKey = $"{restockData.itemType}_{restockData.amount}";
+            if (!RestockState.OriginalLicensePrices.ContainsKey(uniqueKey))
+            {
+                RestockState.OriginalLicensePrices[uniqueKey] = restockData.licensePrice;
+            }
+            if (!RestockState.OriginalLicenseLevels.ContainsKey(uniqueKey))
+            {
+                RestockState.OriginalLicenseLevels[uniqueKey] = restockData.licenseShopLevelRequired;
+            }
+            AdjustLicenseData(restockData, levelRequirementReduction, licenseCostReduction, uniqueKey);
+            AdjustItemCosts(restockData, itemCostReduction, uniqueKey);
+        }
+    }
+
+    private static void AdjustLicenseData(RestockData restockData, float levelRequirementReduction, float licenseCostReduction, string uniqueKey)
+    {
+        restockData.licenseShopLevelRequired = Mathf.Max(1, Mathf.CeilToInt(restockData.licenseShopLevelRequired * (1 - levelRequirementReduction)));
+        restockData.licensePrice = Mathf.Max(0.01f, restockData.licensePrice * (1 - licenseCostReduction));
+        // MinaCardsModPlugin.Log.LogInfo($"Modified License Data: Item Type = {restockData.itemType}, Amount = {restockData.amount}, License Level Required = {restockData.licenseShopLevelRequired}, License Price = {restockData.licensePrice}");
+    }
+
+    private static void AdjustItemCosts(RestockData restockData, float itemCostReduction, string uniqueKey)
+    {
+        int itemTypeIndex = (int)restockData.itemType;
+        if (itemTypeIndex >= 0 && itemTypeIndex < CPlayerData.m_GeneratedCostPriceList.Count)
+        {
+            if (!RestockState.OriginalItemCosts.ContainsKey(uniqueKey))
+            {
+                RestockState.OriginalItemCosts[uniqueKey] = CPlayerData.m_GeneratedCostPriceList[itemTypeIndex];
+            }
+            float originalUnitPrice = RestockState.OriginalItemCosts[uniqueKey];
+            float modifiedUnitPrice = Mathf.Max(0.01f, originalUnitPrice * (1 - itemCostReduction));
+            CPlayerData.m_GeneratedCostPriceList[itemTypeIndex] = modifiedUnitPrice;
+            // MinaCardsModPlugin.Log.LogInfo($"Modified Unit Price: Item Type = {restockData.itemType}, Amount = {restockData.amount}, Original Price = {originalUnitPrice}, New Price = {modifiedUnitPrice}");
+        }
+        else
+        {
+            MinaCardsModPlugin.Log.LogWarning($"AdjustItemCosts: ItemType index {itemTypeIndex} is out of range in m_GeneratedCostPriceList.");
+        }
+    }
+}
+
+[HarmonyPatch(typeof(PhoneManager), "ExitPhoneMode")]
+public class RevertRestockDataPatch
+{
+    static void Postfix()
+    {
+        var phoneManager = CSingleton<PhoneManager>.Instance;
+        var isPhoneModeField = typeof(PhoneManager).GetField("m_IsPhoneMode", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        bool isPhoneMode = (bool)isPhoneModeField.GetValue(phoneManager);
+        if (!isPhoneMode && RestockState.IsModified)
+        {
+            RevertRestockData();
+            RestockState.IsModified = false;
+        }
+    }
+
+    private static void RevertRestockData()
+    {
+        var stockData = CSingleton<InventoryBase>.Instance.m_StockItemData_SO;
+        if (stockData == null)
+        {
+            MinaCardsModPlugin.Log.LogWarning("RevertRestockData: StockItemData_ScriptableObject instance not found.");
+            return;
+        }
+        foreach (var restockData in stockData.m_RestockDataList)
+        {
+            string uniqueKey = $"{restockData.itemType}_{restockData.amount}";
+            if (RestockState.OriginalLicensePrices.TryGetValue(uniqueKey, out float originalLicensePrice))
+            {
+                restockData.licensePrice = originalLicensePrice;
+            }
+            if (RestockState.OriginalLicenseLevels.TryGetValue(uniqueKey, out int originalLicenseLevel))
+            {
+                restockData.licenseShopLevelRequired = originalLicenseLevel;
+            }
+            if (RestockState.OriginalItemCosts.TryGetValue(uniqueKey, out float originalItemCost))
+            {
+                int itemTypeIndex = (int)restockData.itemType;
+                if (itemTypeIndex >= 0 && itemTypeIndex < CPlayerData.m_GeneratedCostPriceList.Count)
+                {
+                    CPlayerData.m_GeneratedCostPriceList[itemTypeIndex] = originalItemCost;
+                }
+            }
+        }
+        // MinaCardsModPlugin.Log.LogInfo("Reverted all modified values to their original state.");
+    }
+}
     
     // Credits Pause
     
@@ -147,6 +270,8 @@ namespace MinaCardsMod.Patches
             return false;
         }
     }
+    
+    
     
     // Replace customer review names
     
