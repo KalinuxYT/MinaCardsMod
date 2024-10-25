@@ -8,6 +8,7 @@ using UnityEngine;
 namespace MinaCardsMod.Patches
 {
     // Phone Service
+    
     [HarmonyPatch(typeof(PhoneManager), "EnterPhoneMode")]
     public class ChangeProviderTextPatch
     {
@@ -17,6 +18,7 @@ namespace MinaCardsMod.Patches
             {
                 textComponent.text = "WanWan-Mobile";
             }
+            else
             {
                 MinaCardsModPlugin.Log.LogWarning("ChangeProviderTextPatch: Could not find 'MobileProviderText' or its TextMeshProUGUI component.");
             }
