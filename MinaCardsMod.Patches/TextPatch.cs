@@ -1,12 +1,245 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using HarmonyLib;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Networking;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+using UnityEngine.Windows;
 
 namespace MinaCardsMod.Patches
 {
+    
+    // Plushie sound effects
+    
+    [HarmonyPatch(typeof(ShelfCompartment), "TakeItemToHand")]
+    public class ToyPiggyAInteractPatch
+    {
+        static void Postfix(ShelfCompartment __instance, Item __result)
+        {
+            if (__result == null) return;
+
+            EItemType itemType = __result.GetItemType();
+            if (itemType == EItemType.Toy_PiggyA)
+            {
+                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Picked up Toy_PiggyA from shelf");
+                ToyPiggyAHandler.EnableToyAction();
+            }
+            else
+            {
+                MinaCardsModPlugin.Log.LogInfo($"[Info :MinaCardsMod] Picked up a different item: {itemType}");
+            }
+        }
+    }
+
+    [HarmonyPatch(typeof(ShelfCompartment), "AddItem")]
+    public class ToyPiggyAAddItemPatch
+    {
+        static void Postfix(ShelfCompartment __instance, Item item)
+        {
+            if (item == null || item.GetItemType() != EItemType.Toy_PiggyA) return;
+
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA placed back on shelf, removing tooltip");
+            ToyPiggyAHandler.DisableToyAction();
+        }
+    }
+
+    public static class ToyPiggyAHandler
+    {
+        private static bool isToyActive = false;
+        private static float cooldownTime = 1.5f;
+        private static float timer = 0.0f;
+        private static GameObject tooltipTextObject;
+
+        private static AudioSource audioSource;
+        private static readonly string soundsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Sounds/");
+        private static readonly string audioFileName = "Squeak.wav";
+
+        public static void EnableToyAction()
+        {
+            isToyActive = true;
+            timer = cooldownTime; 
+
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA action enabled, showing tooltip");
+            ShowCustomTooltip("Press G!");
+
+            if (GameObject.FindObjectOfType<ToyPiggyAUpdater>() == null)
+            {
+                GameObject updaterObject = new GameObject("ToyPiggyAUpdater");
+                updaterObject.AddComponent<ToyPiggyAUpdater>();
+                GameObject.DontDestroyOnLoad(updaterObject);
+            }
+        }
+
+        public static void DisableToyAction()
+        {
+            isToyActive = false;
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA action disabled, hiding tooltip");
+            HideCustomTooltip();
+
+            var updater = GameObject.FindObjectOfType<ToyPiggyAUpdater>();
+            if (updater != null)
+            {
+                GameObject.Destroy(updater.gameObject);
+            }
+        }
+
+        public static void Update()
+        {
+            if (isToyActive)
+            {
+                timer += Time.deltaTime;
+
+                if (timer >= cooldownTime && UnityEngine.Input.GetKeyDown(KeyCode.G))
+                {
+                    MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] 'G' key pressed to use Toy_PiggyA");
+                    UseToyAction();
+                    timer = 0.0f;
+                }
+                else if (timer >= cooldownTime && timer < cooldownTime + Time.deltaTime)
+                {
+                    MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA cooldown reset");
+                }
+            }
+        }
+
+        private static void UseToyAction()
+        {
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Using Toy_PiggyA");
+            PlayCustomAudio();
+        }
+
+        private static void PlayCustomAudio()
+        {
+            if (audioSource == null)
+            {
+                audioSource = new GameObject("ToyPiggyASoundPlayer").AddComponent<AudioSource>();
+                GameObject.DontDestroyOnLoad(audioSource.gameObject);
+            }
+
+            string audioPath = Path.Combine(soundsPath, audioFileName);
+            if (File.Exists(audioPath))
+            {
+                ToyPiggyAUpdater.Instance.StartCoroutine(LoadAudioClipAndPlay(audioPath));
+            }
+            else
+            {
+                MinaCardsModPlugin.Log.LogError($"Audio file not found at path: {audioPath}");
+            }
+        }
+
+        private static IEnumerator LoadAudioClipAndPlay(string filePath)
+        {
+            using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV))
+            {
+                yield return www.SendWebRequest();
+
+                if (www.result == UnityWebRequest.Result.Success)
+                {
+                    AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
+                    audioSource.clip = clip;
+                    audioSource.Play();
+                }
+                else
+                {
+                    MinaCardsModPlugin.Log.LogError($"Failed to load custom audio: {www.error}");
+                }
+            }
+        }
+
+        private static void ShowCustomTooltip(string message)
+        {
+            if (tooltipTextObject == null)
+            {
+                GameObject tooltipCanvasObject = new GameObject("TooltipCanvas");
+                Canvas tooltipCanvas = tooltipCanvasObject.AddComponent<Canvas>();
+                tooltipCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                tooltipCanvas.sortingOrder = 100;
+
+                tooltipTextObject = new GameObject("TooltipText");
+                tooltipTextObject.transform.SetParent(tooltipCanvas.transform, false);
+
+                TextMeshProUGUI textComponent = tooltipTextObject.AddComponent<TextMeshProUGUI>();
+                textComponent.alignment = TextAlignmentOptions.Center;
+                textComponent.fontSize = 124;
+                textComponent.color = Color.black;
+                textComponent.text = message;
+                textComponent.enableAutoSizing = false;
+
+                textComponent.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.3f);
+                textComponent.outlineColor = Color.black;
+                textComponent.outlineWidth = 10f;
+
+                RectTransform rectTransform = tooltipTextObject.GetComponent<RectTransform>();
+                rectTransform.anchorMin = new Vector2(0.5f, 0);
+                rectTransform.anchorMax = new Vector2(0.5f, 0);
+                rectTransform.anchoredPosition = new Vector2(0, 100);
+                rectTransform.sizeDelta = new Vector2(500, 100);
+            }
+
+            tooltipTextObject.SetActive(true);
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip displayed on screen");
+        }
+
+        private static void HideCustomTooltip()
+        {
+            if (tooltipTextObject != null)
+            {
+                tooltipTextObject.SetActive(false);
+                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip hidden");
+            }
+        }
+    }
+
+    public class ToyPiggyAUpdater : MonoBehaviour
+    {
+        public static ToyPiggyAUpdater Instance { get; private set; }
+
+        private void Awake()
+        {
+            if (Instance == null)
+            {
+                Instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void Update()
+        {
+            ToyPiggyAHandler.Update();
+        }
+    }
+    
+    // High Value Card Threshold
+    
+    [HarmonyPatch(typeof(CardOpeningSequence), "Start")]
+    public class ThresholdAdjusterPatch
+    {
+        private const int FixedThresholdValue = 100;
+        static void Postfix(CardOpeningSequence __instance)
+        {
+            var thresholdField = AccessTools.Field(typeof(CardOpeningSequence), "m_HighValueCardThreshold");
+            if (thresholdField != null)
+            {
+                thresholdField.SetValue(__instance, FixedThresholdValue);
+            }
+            else
+            {
+                MinaCardsModPlugin.Log.LogWarning("Could not access 'm_HighValueCardThreshold' field in CardOpeningSequence.");
+            }
+        }
+    }
+    
     // Phone Service
     
     [HarmonyPatch(typeof(PhoneManager), "EnterPhoneMode")]
@@ -186,20 +419,45 @@ public class RevertRestockDataPatch
         }
     }
 
-    // Credits Title
+    // Credits & Music Title
     
     [HarmonyPatch(typeof(TitleScreen), "Start")]
-    public class TitleScreenTextPatches
+    public class TitleScreenTextPatches : MonoBehaviour
     {
+        private static TitleScreenTextPatches _instance;
+
         private static readonly string[] textValues = new string[]
         {
             "", "Scaith - Artwork & Audio", "Samsa - Testing", "SCP - Misc. Feedback", "Minawan - Minasonas & Inspiration",
             "Iw3y - Audio", "", "", "Starcat - Testing", "", "Vulgaris - Testing"
         };
+
+        private static AudioSource audioSource;
+        private static string soundsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Sounds/");
+        private static string audioFileName = "Main.wav";
+
+        public static TitleScreenTextPatches Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    var gameObject = new GameObject("TitleScreenTextPatches");
+                    _instance = gameObject.AddComponent<TitleScreenTextPatches>();
+                    DontDestroyOnLoad(gameObject);
+                }
+                return _instance;
+            }
+        }
+
         static void Postfix()
         {
             ApplyTextChanges();
+            LoadAndPlayMenuMusic();
+            Instance.StartCoroutine(UpdateVolume());
+            SceneManager.activeSceneChanged += OnSceneChanged;
         }
+
         private static void ApplyTextChanges()
         {
             TextPatchUtility.UpdateText("Title", "Special Thanks");
@@ -211,9 +469,73 @@ public class RevertRestockDataPatch
             TextPatchUtility.UpdateTextByContent("-Customer review app", "Diamond - Artwork");
             TextPatchUtility.UpdateTextByContent("Scaith - Artwork & Audio", "Scaith - Artwork & Audio", removeStrikethrough: true);
         }
+
+        private static void LoadAndPlayMenuMusic()
+        {
+            if (audioSource == null)
+            {
+                audioSource = Instance.gameObject.AddComponent<AudioSource>();
+                audioSource.loop = true;
+            }
+
+            string audioPath = Path.Combine(soundsPath, audioFileName);
+
+            if (File.Exists(audioPath))
+            {
+                Instance.StartCoroutine(LoadAudioClipAndPlay(audioPath));
+            }
+            else
+            {
+                MinaCardsModPlugin.Log.LogError($"Audio file not found at path: {audioPath}");
+            }
+        }
+
+        private static IEnumerator LoadAudioClipAndPlay(string filePath)
+        {
+            using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV))
+            {
+                yield return www.SendWebRequest();
+
+                if (www.result == UnityWebRequest.Result.Success)
+                {
+                    AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
+                    audioSource.clip = clip;
+                    audioSource.Play();
+                }
+                else
+                {
+                    MinaCardsModPlugin.Log.LogError($"Failed to load custom audio: {www.error}");
+                }
+            }
+        }
+
+        private static IEnumerator UpdateVolume()
+        {
+            while (true)
+            {
+                if (audioSource != null)
+                {
+                    audioSource.volume = SoundManager.MusicVolume;
+                }
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
+
+        private static void OnSceneChanged(Scene current, Scene next)
+        {
+            if (next.name != "TitleScreen")
+            {
+                if (audioSource != null)
+                {
+                    audioSource.Stop();
+                }
+                SceneManager.activeSceneChanged -= OnSceneChanged;
+                Destroy(_instance.gameObject);
+            }
+        }
     }
 
-    // For both Pause and Title text modification
+    // Pause and Title text modification
     
     public static class TextPatchUtility
     {
@@ -293,7 +615,7 @@ public class RevertRestockDataPatch
             "Evilyn",
             "Eliv",
             "Nwero",
-            "Ember’s#WanFan",
+            "#WanEmberFan",
             "SucculentsCollector",
             "UndercookedGoose",
             "Rebrec",
