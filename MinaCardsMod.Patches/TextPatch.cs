@@ -11,25 +11,90 @@ using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Video;
 using UnityEngine.Windows;
 
 namespace MinaCardsMod.Patches
 {
     
+    // Video Title Background
+    
+    [HarmonyPatch(typeof(TitleScreen), "Start")]
+    public class TitleScreenVideoBackground
+    {
+        private static VideoPlayer videoPlayer;
+        private static RenderTexture renderTexture;
+
+        static void Postfix(TitleScreen __instance)
+        {
+            ReplaceBackgroundWithVideo();
+        }
+
+        private static void ReplaceBackgroundWithVideo()
+        {
+            DisableBackgroundImage();
+            GameObject canvasObject = new GameObject("VideoCanvas");
+            Canvas canvas = canvasObject.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            canvasObject.AddComponent<GraphicRaycaster>();
+            GameObject videoDisplayObject = new GameObject("VideoDisplay");
+            videoDisplayObject.transform.SetParent(canvasObject.transform, false);
+            RawImage videoRawImage = videoDisplayObject.AddComponent<RawImage>();
+            RectTransform rectTransform = videoDisplayObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = Vector2.zero;
+            rectTransform.anchorMax = Vector2.one;
+            rectTransform.offsetMin = Vector2.zero;
+            rectTransform.offsetMax = Vector2.zero;
+            renderTexture = new RenderTexture(3840, 2160, 0, RenderTextureFormat.ARGB32)
+            {
+                antiAliasing = 4,
+                filterMode = FilterMode.Trilinear
+            };
+            renderTexture.Create();
+            videoRawImage.texture = renderTexture;
+            videoPlayer = videoDisplayObject.AddComponent<VideoPlayer>();
+            videoPlayer.playOnAwake = false;
+            videoPlayer.isLooping = true;
+            videoPlayer.renderMode = VideoRenderMode.RenderTexture;
+            videoPlayer.targetTexture = renderTexture;
+            videoPlayer.url = "file://" + Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "demo.mp4");
+            if (!File.Exists(videoPlayer.url.Replace("file://", "")))
+            {
+                MinaCardsModPlugin.Log.LogError($"[Mod] Video file not found at: {videoPlayer.url}");
+                return;
+            }
+            videoPlayer.Prepare();
+            videoPlayer.prepareCompleted += (VideoPlayer vp) => vp.Play();
+        }
+
+        private static void DisableBackgroundImage()
+        {
+            GameObject backgroundObject = GameObject.Find("BG");
+            if (backgroundObject == null) return;
+            var bgImage = backgroundObject.GetComponent<UnityEngine.UI.Image>();
+            if (bgImage != null) bgImage.enabled = false;
+            var bgRawImage = backgroundObject.GetComponent<UnityEngine.UI.RawImage>();
+            if (bgRawImage != null) bgRawImage.enabled = false;
+            var renderer = backgroundObject.GetComponent<Renderer>();
+            if (renderer != null) renderer.enabled = false;
+        }
+    }
+
     // Plushie sound effects
     
     [HarmonyPatch(typeof(ShelfCompartment), "TakeItemToHand")]
-    public class ToyPiggyAInteractPatch
+    public class ToySqueakInteractPatch
     {
         static void Postfix(ShelfCompartment __instance, Item __result)
         {
             if (__result == null) return;
 
             EItemType itemType = __result.GetItemType();
-            if (itemType == EItemType.Toy_PiggyA)
+            if (itemType == EItemType.Toy_PiggyA || itemType == EItemType.Toy_StarfishA || itemType == EItemType.Toy_BatA || itemType == EItemType.Toy_GolemA)
             {
-                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Picked up Toy_PiggyA from shelf");
-                ToyPiggyAHandler.EnableToyAction();
+                MinaCardsModPlugin.Log.LogInfo($"[Info :MinaCardsMod] Picked up {itemType} from shelf");
+                ToySqueakHandler.EnableToyAction();
             }
             else
             {
@@ -39,18 +104,22 @@ namespace MinaCardsMod.Patches
     }
 
     [HarmonyPatch(typeof(ShelfCompartment), "AddItem")]
-    public class ToyPiggyAAddItemPatch
+    public class ToySqueakAddItemPatch
     {
         static void Postfix(ShelfCompartment __instance, Item item)
         {
-            if (item == null || item.GetItemType() != EItemType.Toy_PiggyA) return;
+            if (item == null) return;
 
-            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA placed back on shelf, removing tooltip");
-            ToyPiggyAHandler.DisableToyAction();
+            EItemType itemType = item.GetItemType();
+            if (itemType == EItemType.Toy_PiggyA || itemType == EItemType.Toy_StarfishA || itemType == EItemType.Toy_BatA || itemType == EItemType.Toy_GolemA)
+            {
+                MinaCardsModPlugin.Log.LogInfo($"[Info :MinaCardsMod] {itemType} placed back on shelf, removing tooltip");
+                ToySqueakHandler.DisableToyAction();
+            }
         }
     }
 
-    public static class ToyPiggyAHandler
+    public static class ToySqueakHandler
     {
         private static bool isToyActive = false;
         private static float cooldownTime = 1.5f;
@@ -61,164 +130,174 @@ namespace MinaCardsMod.Patches
         private static readonly string soundsPath = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), "Sounds/");
         private static readonly string audioFileName = "Squeak.wav";
 
-        public static void EnableToyAction()
-        {
-            isToyActive = true;
-            timer = cooldownTime; 
-
-            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA action enabled, showing tooltip");
-            ShowCustomTooltip("Press G!");
-
-            if (GameObject.FindObjectOfType<ToyPiggyAUpdater>() == null)
-            {
-                GameObject updaterObject = new GameObject("ToyPiggyAUpdater");
-                updaterObject.AddComponent<ToyPiggyAUpdater>();
-                GameObject.DontDestroyOnLoad(updaterObject);
-            }
-        }
-
-        public static void DisableToyAction()
-        {
-            isToyActive = false;
-            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA action disabled, hiding tooltip");
-            HideCustomTooltip();
-
-            var updater = GameObject.FindObjectOfType<ToyPiggyAUpdater>();
-            if (updater != null)
-            {
-                GameObject.Destroy(updater.gameObject);
-            }
-        }
-
-        public static void Update()
-        {
-            if (isToyActive)
-            {
-                timer += Time.deltaTime;
-
-                if (timer >= cooldownTime && UnityEngine.Input.GetKeyDown(KeyCode.G))
-                {
-                    MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] 'G' key pressed to use Toy_PiggyA");
-                    UseToyAction();
-                    timer = 0.0f;
-                }
-                else if (timer >= cooldownTime && timer < cooldownTime + Time.deltaTime)
-                {
-                    MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy_PiggyA cooldown reset");
-                }
-            }
-        }
-
-        private static void UseToyAction()
-        {
-            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Using Toy_PiggyA");
-            PlayCustomAudio();
-        }
-
-        private static void PlayCustomAudio()
-        {
-            if (audioSource == null)
-            {
-                audioSource = new GameObject("ToyPiggyASoundPlayer").AddComponent<AudioSource>();
-                GameObject.DontDestroyOnLoad(audioSource.gameObject);
-            }
-
-            string audioPath = Path.Combine(soundsPath, audioFileName);
-            if (File.Exists(audioPath))
-            {
-                ToyPiggyAUpdater.Instance.StartCoroutine(LoadAudioClipAndPlay(audioPath));
-            }
-            else
-            {
-                MinaCardsModPlugin.Log.LogError($"Audio file not found at path: {audioPath}");
-            }
-        }
-
-        private static IEnumerator LoadAudioClipAndPlay(string filePath)
-        {
-            using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV))
-            {
-                yield return www.SendWebRequest();
-
-                if (www.result == UnityWebRequest.Result.Success)
-                {
-                    AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
-                    audioSource.clip = clip;
-                    audioSource.Play();
-                }
-                else
-                {
-                    MinaCardsModPlugin.Log.LogError($"Failed to load custom audio: {www.error}");
-                }
-            }
-        }
-
-        private static void ShowCustomTooltip(string message)
-        {
-            if (tooltipTextObject == null)
-            {
-                GameObject tooltipCanvasObject = new GameObject("TooltipCanvas");
-                Canvas tooltipCanvas = tooltipCanvasObject.AddComponent<Canvas>();
-                tooltipCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                tooltipCanvas.sortingOrder = 100;
-
-                tooltipTextObject = new GameObject("TooltipText");
-                tooltipTextObject.transform.SetParent(tooltipCanvas.transform, false);
-
-                TextMeshProUGUI textComponent = tooltipTextObject.AddComponent<TextMeshProUGUI>();
-                textComponent.alignment = TextAlignmentOptions.Center;
-                textComponent.fontSize = 124;
-                textComponent.color = Color.black;
-                textComponent.text = message;
-                textComponent.enableAutoSizing = false;
-
-                textComponent.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.3f);
-                textComponent.outlineColor = Color.black;
-                textComponent.outlineWidth = 10f;
-
-                RectTransform rectTransform = tooltipTextObject.GetComponent<RectTransform>();
-                rectTransform.anchorMin = new Vector2(0.5f, 0);
-                rectTransform.anchorMax = new Vector2(0.5f, 0);
-                rectTransform.anchoredPosition = new Vector2(0, 100);
-                rectTransform.sizeDelta = new Vector2(500, 100);
-            }
-
-            tooltipTextObject.SetActive(true);
-            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip displayed on screen");
-        }
-
-        private static void HideCustomTooltip()
-        {
-            if (tooltipTextObject != null)
-            {
-                tooltipTextObject.SetActive(false);
-                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip hidden");
-            }
-        }
-    }
-
-    public class ToyPiggyAUpdater : MonoBehaviour
+    public static void EnableToyAction()
     {
-        public static ToyPiggyAUpdater Instance { get; private set; }
+        isToyActive = true;
+        timer = cooldownTime; 
 
-        private void Awake()
+        MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy action enabled, showing tooltip");
+        ShowCustomTooltip("Press G!");
+
+        if (GameObject.FindObjectOfType<ToySqueakUpdater>() == null)
         {
-            if (Instance == null)
+            GameObject updaterObject = new GameObject("ToySqueakUpdater");
+            updaterObject.AddComponent<ToySqueakUpdater>();
+            GameObject.DontDestroyOnLoad(updaterObject);
+        }
+    }
+
+    public static void DisableToyAction()
+    {
+        isToyActive = false;
+        MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy action disabled, hiding tooltip");
+        HideCustomTooltip();
+
+        var updater = GameObject.FindObjectOfType<ToySqueakUpdater>();
+        if (updater != null)
+        {
+            GameObject.Destroy(updater.gameObject);
+        }
+    }
+
+    public static void Update()
+    {
+        if (isToyActive)
+        {
+            timer += Time.deltaTime;
+
+            if (timer >= cooldownTime && UnityEngine.Input.GetKeyDown(KeyCode.G))
             {
-                Instance = this;
-                DontDestroyOnLoad(gameObject);
+                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] 'G' key pressed to use toy");
+                UseToyAction();
+                timer = 0.0f;
+            }
+            else if (timer >= cooldownTime && timer < cooldownTime + Time.deltaTime)
+            {
+                MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Toy action cooldown reset");
+            }
+        }
+    }
+
+    private static void UseToyAction()
+    {
+        MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Using toy action");
+        PlayCustomAudio();
+    }
+
+    private static void PlayCustomAudio()
+    {
+        if (audioSource == null)
+        {
+            audioSource = new GameObject("ToySoundPlayer").AddComponent<AudioSource>();
+            GameObject.DontDestroyOnLoad(audioSource.gameObject);
+        }
+
+        string audioPath = Path.Combine(soundsPath, audioFileName);
+        if (File.Exists(audioPath))
+        {
+            ToySqueakUpdater.Instance.StartCoroutine(LoadAudioClipAndPlay(audioPath));
+            ToySqueakUpdater.Instance.StartCoroutine(UpdateVolume());
+        }
+        else
+        {
+            MinaCardsModPlugin.Log.LogError($"Audio file not found at path: {audioPath}");
+        }
+    }
+
+    private static IEnumerator LoadAudioClipAndPlay(string filePath)
+    {
+        using (UnityWebRequest www = UnityWebRequestMultimedia.GetAudioClip("file://" + filePath, AudioType.WAV))
+        {
+            yield return www.SendWebRequest();
+
+            if (www.result == UnityWebRequest.Result.Success)
+            {
+                AudioClip clip = DownloadHandlerAudioClip.GetContent(www);
+                audioSource.clip = clip;
+                audioSource.Play();
             }
             else
             {
-                Destroy(gameObject);
+                MinaCardsModPlugin.Log.LogError($"Failed to load custom audio: {www.error}");
             }
         }
+    }
 
-        private void Update()
+    private static IEnumerator UpdateVolume()
+    {
+        while (audioSource != null)
         {
-            ToyPiggyAHandler.Update();
+            audioSource.volume = SoundManager.SFXVolume;
+            yield return new WaitForSeconds(0.1f);
         }
     }
+
+    private static void ShowCustomTooltip(string message)
+    {
+        if (tooltipTextObject == null)
+        {
+            GameObject tooltipCanvasObject = new GameObject("TooltipCanvas");
+            Canvas tooltipCanvas = tooltipCanvasObject.AddComponent<Canvas>();
+            tooltipCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            tooltipCanvas.sortingOrder = 100;
+
+            tooltipTextObject = new GameObject("TooltipText");
+            tooltipTextObject.transform.SetParent(tooltipCanvas.transform, false);
+
+            TextMeshProUGUI textComponent = tooltipTextObject.AddComponent<TextMeshProUGUI>();
+            textComponent.alignment = TextAlignmentOptions.Center;
+            textComponent.fontSize = 124;
+            textComponent.color = Color.black;
+            textComponent.text = message;
+            textComponent.enableAutoSizing = false;
+
+            textComponent.fontMaterial.SetFloat(ShaderUtilities.ID_FaceDilate, 0.3f);
+            textComponent.outlineColor = Color.black;
+            textComponent.outlineWidth = 10f;
+
+            RectTransform rectTransform = tooltipTextObject.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0.5f, 0);
+            rectTransform.anchorMax = new Vector2(0.5f, 0);
+            rectTransform.anchoredPosition = new Vector2(0, 100);
+            rectTransform.sizeDelta = new Vector2(500, 100);
+        }
+
+        tooltipTextObject.SetActive(true);
+        MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip displayed on screen");
+    }
+
+    private static void HideCustomTooltip()
+    {
+        if (tooltipTextObject != null)
+        {
+            tooltipTextObject.SetActive(false);
+            MinaCardsModPlugin.Log.LogInfo("[Info :MinaCardsMod] Tooltip hidden");
+        }
+    }
+}
+
+public class ToySqueakUpdater : MonoBehaviour
+{
+    public static ToySqueakUpdater Instance { get; private set; }
+
+    private void Awake()
+    {
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
+    }
+
+    private void Update()
+    {
+        ToySqueakHandler.Update();
+    }
+}
     
     // High Value Card Threshold
     
